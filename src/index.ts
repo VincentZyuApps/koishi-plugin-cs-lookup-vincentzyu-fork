@@ -5,20 +5,27 @@ import { bind } from './cs-bind';
 import { } from 'koishi-plugin-umami-statistics-service';
 import { PROXY_PROTOCOL, IMAGE_TYPES } from './types';
 
-export const name = 'cs-lookup';
+export const name = 'cs-lookup-vincentzyu-fork';
 
 export const umami: [string, string] = ["29272bd1-0f4c-4db8-ad22-bec20ee15810", "https://data.itzdrli.cc"];
 
 export const inject = ['puppeteer', 'database', 'umamiStatisticsService'];
 
 export const Config = Schema.intersect([
+
   Schema.object({
     data_collect: Schema.boolean()
       .default(true)
       .description('📊 是否允许匿名数据收集 隐私政策见上方链接'),
+    preferOfficialSteamApi: Schema.boolean()
+      .default(true)
+      .description('🎮 是否优先使用 Steam 官方 API（官方免费但大陆可能访问不稳定，关闭则优先使用付费 steamwebapi.com）'),
+    officialSteamApiKey: Schema.string()
+      .description("🔑 Steam 官方 API Key（免费，从 steamcommunity.com/dev/apikey 获取）"),
     steamWebApiKey: Schema.string()
-      .description("🔑 Steam Web API Key from www.steamwebapi.com"),
+      .description("🔑 steamwebapi.com 的 API Key（付费，配额有限，作为官方 API 的回退/备用）"),
   }).description("⚙️ 基础设置"),
+
   Schema.object({
     enableDarkTheme: Schema.boolean()
       .default(true)
@@ -26,6 +33,9 @@ export const Config = Schema.intersect([
     enableAvatarBackground: Schema.boolean()
       .default(false)
       .description('🖼️ 是否在背景贴上用户头像（开启后背景为用户头像+磨砂玻璃效果）'),
+    enableImageCache: Schema.boolean()
+      .default(true)
+      .description('💾 是否缓存饰品图片到磁盘（大幅提升重复查询速度）'),
     gridColumns: Schema.number()
       .default(5)
       .min(2).max(10).step(1)
@@ -52,11 +62,13 @@ export const Config = Schema.intersect([
       .default('domcontentloaded')
       .description('⏳ 页面加载等待策略'),
   }).description("🎨 puppeteer网页截图配置"),
+  
   Schema.object({
     enableRestServer: Schema.boolean()
       .default(false)
       .description('🌐 是否启用REST API服务器'),
   }).description("🔌 REST API"),
+
   Schema.object({
     // proxyAddr: Schema.string()
     //   .default("socks5h://192.168.31.84:7891")
@@ -80,9 +92,15 @@ export const Config = Schema.intersect([
         .description('🛖 代理端口。')
         .default(7897)
     }),
+    useUserAgent: Schema.boolean()
+      .description('🌐 是否使用自定义用户代理 (User-Agent)')
+      .default(true),
     userAgent: Schema.string()
       .description("🔍 chrome打开chrome://version页面，找到用户代理")
       .role('textarea', { rows: [2, 10] }),
+    useCookie: Schema.boolean()
+      .description('🍪 是否使用自定义 Cookie')
+      .default(false),
     cookie: Schema.string()
       .description("🍪 浏览器访问steam库存链接，然后F12打开Network，找到这个请求的cookie填入。 <br/> https://steamcommunity.com/inventory/76561198307564265/730/2?l=schinese%EF%BC%8C ")
       .role('textarea', { rows: [2, 10] }),
@@ -91,6 +109,9 @@ export const Config = Schema.intersect([
   Schema.object({
     verboseConsoleLog: Schema.boolean()
       .description("是否在控制台输出详细信息")
+      .default(false),
+    verboseFileLog: Schema.boolean()
+      .description("是否将库存数据完整JSON输出到文件 (../cache/inv_data/res.json)")
       .default(false)
   }).description('debug设置')
 

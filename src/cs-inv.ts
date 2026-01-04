@@ -3,6 +3,8 @@ import { Config, umami } from './index';
 import { createAxiosInstance } from './proxy';
 import { } from 'koishi-plugin-puppeteer';
 import { } from 'koishi-plugin-umami-statistics-service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export function isOnlyDigits(str: string): boolean {
   return /^\d+$/.test(str);
@@ -10,6 +12,71 @@ export function isOnlyDigits(str: string): boolean {
 
 export const light = ['#81a1c1', '#2e3440', '#5e81ac']; // Changed font color to a dark gray
 export const dark = ['#2e3440', '#ffffff', '#434c5e'];
+
+// 缓存目录路径
+const CACHE_DIR = path.join(__dirname, '..', 'cache', 'inv_image');
+const INV_DATA_DIR = path.join(__dirname, '..', 'cache', 'inv_data');
+
+/**
+ * 确保缓存目录存在
+ */
+function ensureCacheDir(): void {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+}
+
+/**
+ * 根据 classid 和 instanceid 生成缓存文件路径
+ */
+function getCacheFilePath(classid: string, instanceid: string): string {
+  return path.join(CACHE_DIR, `item_class_${classid}_instance_${instanceid}.b64`);
+}
+
+/**
+ * 从缓存读取 Base64 图片
+ */
+function readFromCache(classid: string, instanceid: string): string | null {
+  const filePath = getCacheFilePath(classid, instanceid);
+  if (fs.existsSync(filePath)) {
+    try {
+      return fs.readFileSync(filePath, 'utf-8');
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * 写入缓存
+ */
+function writeToCache(classid: string, instanceid: string, base64Data: string): void {
+  try {
+    const filePath = getCacheFilePath(classid, instanceid);
+    fs.writeFileSync(filePath, base64Data, 'utf-8');
+  } catch (e) {
+    // 写入失败静默忽略
+  }
+}
+
+/**
+ * 确保 inv_data 目录存在
+ */
+function ensureInvDataDir(): void {
+  if (!fs.existsSync(INV_DATA_DIR)) {
+    fs.mkdirSync(INV_DATA_DIR, { recursive: true });
+  }
+}
+
+/**
+ * 将 invData 写入文件
+ */
+function writeInvDataToFile(data: any): void {
+  ensureInvDataDir();
+  const filePath = path.join(INV_DATA_DIR, 'res.json');
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
 
 /**
  * 获取图片的 Base64 编码
@@ -27,6 +94,43 @@ async function getImageBase64(ctx: Context, axiosInstance: any, url: string): Pr
   }
 }
 
+/**
+ * 获取饰品图片的 Base64 编码（带缓存）
+ * @returns { base64: string, fromCache: boolean }
+ */
+async function getItemImageBase64(
+  ctx: Context, 
+  axiosInstance: any, 
+  iconUrl: string, 
+  classid: string, 
+  instanceid: string,
+  enableCache: boolean,
+  verboseLog: boolean
+): Promise<{ base64: string; fromCache: boolean }> {
+  const imageUrl = "https://community.cloudflare.steamstatic.com/economy/image/" + iconUrl;
+  
+  // 尝试从缓存读取
+  if (enableCache) {
+    const cached = readFromCache(classid, instanceid);
+    if (cached) {
+      if (verboseLog) {
+        ctx.logger.info(`[cs-lookup] 📦 缓存命中: class_${classid}_instance_${instanceid}`);
+      }
+      return { base64: cached, fromCache: true };
+    }
+  }
+  
+  // 缓存未命中，从网络获取
+  const base64Data = await getImageBase64(ctx, axiosInstance, imageUrl);
+  
+  // 写入缓存（仅当成功获取且不是回退URL时）
+  if (enableCache && base64Data.startsWith('data:')) {
+    writeToCache(classid, instanceid, base64Data);
+  }
+  
+  return { base64: base64Data, fromCache: false };
+}
+
 export function inv(ctx: Context, config: any) {
   const axiosWithProxy = createAxiosInstance(config);
 
@@ -34,6 +138,19 @@ export function inv(ctx: Context, config: any) {
   ctx.command('cs-inv', '查看CS背包', { authority: 0 })
     .option('arg1_steamid', '-s, --steamid <arg1_steamid:string> steam的id')
     .action(async ({ session, options }) => {
+      // ========== 时间统计 ==========
+      const timingEnabled = config.verboseConsoleLog;
+      const startTime = Date.now();
+      const timing: { [key: string]: number } = {};
+      
+      const logTiming = (label: string) => {
+        if (timingEnabled) {
+          const elapsed = Date.now() - startTime;
+          timing[label] = elapsed;
+          ctx.logger.info(`[cs-lookup] ⏱️ ${label}: ${elapsed}ms`);
+        }
+      };
+      // ==============================
 
       if (config.data_collect) {
         ctx.umamiStatisticsService.send({
@@ -79,33 +196,116 @@ export function inv(ctx: Context, config: any) {
         return "无效steamID, 若不知道steamID请使用指令 `getid Steam个人资料页链接` 获取";
       }
 
-      // 使用官方 Steam API 替换原有的 us-cc 代理
-      const playerUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${config.steamWebApiKey}&steamids=${STEAMID}`;
+      // 优先使用 www.steamwebapi.com 的接口获取玩家信息，配额用尽则回退到官方 API
+      const steamWebApiUrl = `https://www.steamwebapi.com/steam/api/profile?key=${config.steamWebApiKey}&steam_id=${STEAMID}`;
+      const officialApiUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${config.officialSteamApiKey}&steamids=${STEAMID}`;
       const invUrl = `https://steamcommunity.com/inventory/${STEAMID}/730/2?l=schinese`;
       
       const currentColorArr = config.enableDarkTheme ? dark : light;
 
+      // 辅助函数：使用官方 Steam API 获取玩家信息
+      async function fetchFromOfficialApi(): Promise<{ avatarfull: string; personaname: string; lastlogoff?: number } | null> {
+        if (!config.officialSteamApiKey) return null;
+        try {
+          const officialRes = await axiosWithProxy.get(officialApiUrl);
+          const players = officialRes?.data?.response?.players;
+          if (players && players.length > 0) {
+            const player = players[0];
+            return {
+              avatarfull: player.avatarfull || '',
+              personaname: player.personaname || '未知用户',
+              lastlogoff: player.lastlogoff,
+            };
+          }
+        } catch (e) {
+          ctx.logger.warn(`[cs-lookup] 官方 Steam API 请求失败: ${e.message}`);
+        }
+        return null;
+      }
 
-      try {
-        if (!config.steamWebApiKey) {
-          throw new Error('未配置 Steam Web API Key，请在插件设置中填写。');
+      // 辅助函数：使用 steamwebapi.com 获取玩家信息
+      async function fetchFromSteamWebApi(): Promise<{ avatarfull: string; personaname: string; lastlogoff?: number } | null> {
+        if (!config.steamWebApiKey) return null;
+        try {
+          const userRes = await axiosWithProxy.get(steamWebApiUrl);
+          const playerData = userRes?.data;
+          return {
+            avatarfull: playerData?.avatarfull || playerData?.player?.avatarfull || '',
+            personaname: playerData?.personaname || playerData?.player?.personaname || '未知用户',
+            lastlogoff: playerData?.lastlogoff || playerData?.player?.lastlogoff,
+          };
+        } catch (e) {
+          const status = e.response?.status;
+          if (status === 402) {
+            ctx.logger.warn(`[cs-lookup] steamwebapi.com 配额已用尽 (402)`);
+          } else {
+            ctx.logger.warn(`[cs-lookup] steamwebapi.com 请求失败 (${status || e.message})`);
+          }
+        }
+        return null;
+      }
+
+      // 辅助函数：获取玩家信息（带回退逻辑，根据 preferOfficialSteamApi 决定优先级）
+      async function fetchPlayerInfo(): Promise<{ avatarfull: string; personaname: string; lastlogoff?: number }> {
+        const preferOfficial = config.preferOfficialSteamApi !== false; // 默认为 true
+        
+        if (preferOfficial) {
+          // 优先官方 API，steamwebapi.com 作为回退
+          ctx.logger.info(`[cs-lookup] 优先使用官方 Steam API...`);
+          let result = await fetchFromOfficialApi();
+          if (result) return result;
+          
+          ctx.logger.info(`[cs-lookup] 官方 API 失败，回退到 steamwebapi.com...`);
+          result = await fetchFromSteamWebApi();
+          if (result) return result;
+        } else {
+          // 优先 steamwebapi.com，官方 API 作为回退
+          ctx.logger.info(`[cs-lookup] 优先使用 steamwebapi.com...`);
+          let result = await fetchFromSteamWebApi();
+          if (result) return result;
+          
+          ctx.logger.info(`[cs-lookup] steamwebapi.com 失败，回退到官方 Steam API...`);
+          result = await fetchFromOfficialApi();
+          if (result) return result;
         }
 
-        const userRes = await axiosWithProxy.get(playerUrl);
-        const playerAvatarFullUrl = userRes?.data?.response?.players[0]?.avatarfull;
+        // 两个 API 都失败
+        if (!config.steamWebApiKey && !config.officialSteamApiKey) {
+          throw new Error('未配置任何 Steam API Key，请在插件设置中至少填写一个 Key。\n• officialSteamApiKey: 官方免费 (steamcommunity.com/dev/apikey)\n• steamWebApiKey: 付费 (steamwebapi.com)');
+        }
+        throw new Error('所有 Steam API 请求都失败，可能是网络问题或配额用尽。');
+      }
+
+      try {
+        const playerInfo = await fetchPlayerInfo();
+        logTiming('获取玩家信息');
+        
+        const playerAvatarFullUrl = playerInfo.avatarfull;
         
         // 将头像转为 Base64
         const proxiedPlayerAvatarFullUrl = await getImageBase64(ctx, axiosWithProxy, playerAvatarFullUrl);
+        logTiming('转换头像为Base64');
         
         ctx.logger.info(`playerAvatarFullUrl = ${playerAvatarFullUrl}`);
-        const playerPersonName = userRes?.data?.response?.players[0]?.personaname || '未知用户';
-        const playerLastLogoff = userRes?.data?.response?.players[0]?.lastlogoff;
+        const playerPersonName = playerInfo.personaname;
+        const playerLastLogoff = playerInfo.lastlogoff;
         const playerLastLogoffTimeStr = playerLastLogoff ? (new Date(playerLastLogoff * 1000)).toLocaleString() : '未知';
 
         const invRes = await axiosWithProxy.get(invUrl);
         const invData = invRes.data;
+        logTiming('获取库存数据');
 
         ctx.logger.info(`[debug] invData = ${JSON.stringify(invData).slice(0, 1000)}[end]`);
+
+        // 如果开启 verboseFileLog，将完整 invData 写入文件
+        if (config.verboseFileLog) {
+          try {
+            writeInvDataToFile(invData);
+            ctx.logger.info(`[cs-lookup] 📝 已将库存数据写入: ${path.join(INV_DATA_DIR, 'res.json')}`);
+          } catch (e) {
+            ctx.logger.warn(`[cs-lookup] 写入库存数据文件失败: ${e.message}`);
+          }
+        }
 
         let cardHtml = ``;
         let gridColumns = config.gridColumns || 4;
@@ -124,18 +324,50 @@ export function inv(ctx: Context, config: any) {
         } else {
           // 否则，正常处理库存数据
           ctx.logger.info(`invData有有descriptions字段。`);
+          
+          // 确保缓存目录存在
+          if (config.enableImageCache !== false) {
+            ensureCacheDir();
+          }
+          
           const itemMap = new Map<string, { count: number, imageUrl: string }>();
+          let cacheHitCount = 0;
+          let cacheMissCount = 0;
+          
           for (const item of invData.descriptions) {
             const itemName = item.market_name;
-            const imageUrl = "https://community.cloudflare.steamstatic.com/economy/image/" + item.icon_url;
+            const classid = item.classid || '';
+            const instanceid = item.instanceid || '0';
+            
             if (!itemMap.has(itemName)) {
-              // 将饰品图片转为 Base64
-              const base64Image = await getImageBase64(ctx, axiosWithProxy, imageUrl);
-              itemMap.set(itemName, { count: 0, imageUrl: base64Image });
+              // 将饰品图片转为 Base64（带缓存）
+              const result = await getItemImageBase64(
+                ctx, 
+                axiosWithProxy, 
+                item.icon_url, 
+                classid, 
+                instanceid,
+                config.enableImageCache !== false,
+                config.verboseConsoleLog
+              );
+              
+              // 统计缓存命中情况
+              if (result.fromCache) {
+                cacheHitCount++;
+              } else {
+                cacheMissCount++;
+              }
+              
+              itemMap.set(itemName, { count: 0, imageUrl: result.base64 });
             }
             let itemInfo = itemMap.get(itemName);
             itemInfo.count += 1;
           }
+          
+          if (timingEnabled && config.enableImageCache !== false) {
+            ctx.logger.info(`[cs-lookup] 📊 缓存统计: 命中 ${cacheHitCount}, 未命中 ${cacheMissCount}`);
+          }
+          logTiming('转换饰品图片为Base64');
 
           for (const [itemName, itemInfo] of itemMap.entries()) {
             cardHtml += `
@@ -169,6 +401,7 @@ export function inv(ctx: Context, config: any) {
         await invPage.setContent(html, {
           waitUntil: config.waitUntil || 'domcontentloaded'
         });
+        logTiming('Puppeteer设置页面内容');
 
         if (config.verboseConsoleLog) {
           ctx.logger.info(`[debug] 正在等待图片加载...`);
@@ -183,6 +416,7 @@ export function inv(ctx: Context, config: any) {
         } catch (err) {
           ctx.logger.warn(`[debug] 部分图片加载超时，将继续渲染`);
         }
+        logTiming('Puppeteer等待图片加载');
 
         await invPage.setViewport({ width: 1666, height: pageHeight });
 
@@ -201,8 +435,22 @@ export function inv(ctx: Context, config: any) {
         }
         
         const invImageRes = await invPage.screenshot(screenshotOptions);
+        logTiming('Puppeteer截图完成');
+        
         const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
         await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
+        logTiming('图片发送完成');
+        
+        // 输出时间统计汇总
+        if (timingEnabled) {
+          const totalTime = Date.now() - startTime;
+          ctx.logger.info(`[cs-lookup] ========== 时间统计汇总 ==========`);
+          for (const [label, time] of Object.entries(timing)) {
+            ctx.logger.info(`[cs-lookup]   ${label}: ${time}ms`);
+          }
+          ctx.logger.info(`[cs-lookup]   总耗时: ${totalTime}ms`);
+          ctx.logger.info(`[cs-lookup] ====================================`);
+        }
 
       } catch (e) {
         ctx.logger.error(`[cs-lookup] 发生错误: ${e.stack || e}`);
@@ -223,21 +471,18 @@ export function inv(ctx: Context, config: any) {
             </div>
         `;
 
-        // 尝试获取用户信息以渲染错误页面
+        // 尝试获取用户信息以渲染错误页面（复用回退逻辑）
         let playerPersonName = '未知用户';
         let proxiedPlayerAvatarFullUrl = '';
         let playerLastLogoffTimeStr = '未知';
 
         try {
-          if (config.steamWebApiKey) {
-            const userRes = await axiosWithProxy.get(playerUrl);
-            const playerAvatarFullUrl = userRes?.data?.response?.players[0]?.avatarfull;
-            proxiedPlayerAvatarFullUrl = await getImageBase64(ctx, axiosWithProxy, playerAvatarFullUrl);
-            playerPersonName = userRes?.data?.response?.players[0]?.personaname || '未知用户';
-            const playerLastLogoff = userRes?.data?.response?.players[0]?.lastlogoff;
-            if (playerLastLogoff) {
-              playerLastLogoffTimeStr = (new Date(playerLastLogoff * 1000)).toLocaleString();
-            }
+          const playerInfo = await fetchPlayerInfo();
+          const playerAvatarFullUrl = playerInfo.avatarfull;
+          proxiedPlayerAvatarFullUrl = await getImageBase64(ctx, axiosWithProxy, playerAvatarFullUrl);
+          playerPersonName = playerInfo.personaname;
+          if (playerInfo.lastlogoff) {
+            playerLastLogoffTimeStr = (new Date(playerInfo.lastlogoff * 1000)).toLocaleString();
           }
         } catch (err) {
           ctx.logger.warn(`[cs-lookup] 渲染错误页面时获取用户信息失败: ${err.message}`);

@@ -7,13 +7,22 @@ import { PROXY_PROTOCOL } from './types';
 import { Config } from './index';
 
 export function createAxiosInstance(config: any) {
+  const headers: any = {
+    'Accept': 'application/json'
+  };
+
+  if (config.useUserAgent && config.userAgent) {
+    headers['User-Agent'] = config.userAgent;
+  }
+
+  if (config.useCookie && config.cookie) {
+    headers['Cookie'] = config.cookie;
+  }
+
   if (!config.proxy.enabled) {
     return axios.create({
       timeout: 15000,
-      headers: {
-        'User-Agent': config.userAgent,
-        'Accept': 'application/json'
-      }
+      headers
     });
   }
 
@@ -38,10 +47,7 @@ export function createAxiosInstance(config: any) {
       console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
       return axios.create({
         timeout: 15000,
-        headers: {
-          'User-Agent': config.userAgent,
-          'Accept': 'application/json'
-        }
+        headers
       });
   }
 
@@ -49,9 +55,6 @@ export function createAxiosInstance(config: any) {
     httpAgent: agent,
     httpsAgent: agent,
     timeout: 15000,
-    headers: {
-      'User-Agent': config.userAgent,
-      'Accept': 'application/json'
-    }
+    headers
   });
 }
