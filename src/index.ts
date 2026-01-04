@@ -18,8 +18,6 @@ export const Config = Schema.intersect([
       .description('📊 是否允许匿名数据收集 隐私政策见上方链接'),
     steamWebApiKey: Schema.string()
       .description("🔑 Steam Web API Key from www.steamwebapi.com"),
-    steamCommunityApiKey: Schema.string()
-      .description("🔐 Steam Community API Key from www.steamcommunity.com"),
   }).description("⚙️ 基础设置"),
   Schema.object({
     enableDarkTheme: Schema.boolean()
@@ -45,6 +43,14 @@ export const Config = Schema.intersect([
       .min(0).max(100).step(1)
       .role('slider')
       .description("📏 截图质量 (0-100)，对PNG无效"),
+    waitUntil: Schema.union([
+      Schema.const('load').description('load - 等待 load 事件'),
+      Schema.const('domcontentloaded').description('domcontentloaded - 等待 DOM 解析完成'),
+      Schema.const('networkidle0').description('networkidle0 - 等待网络完全空闲'),
+      Schema.const('networkidle2').description('networkidle2 - 等待网络基本空闲'),
+    ])
+      .default('domcontentloaded')
+      .description('⏳ 页面加载等待策略'),
   }).description("🎨 puppeteer网页截图配置"),
   Schema.object({
     enableRestServer: Schema.boolean()
@@ -80,7 +86,13 @@ export const Config = Schema.intersect([
     cookie: Schema.string()
       .description("🍪 浏览器访问steam库存链接，然后F12打开Network，找到这个请求的cookie填入。 <br/> https://steamcommunity.com/inventory/76561198307564265/730/2?l=schinese%EF%BC%8C ")
       .role('textarea', { rows: [2, 10] }),
-  }).description("🔌 代理配置")
+  }).description("🔌 代理配置"),
+
+  Schema.object({
+    verboseConsoleLog: Schema.boolean()
+      .description("是否在控制台输出详细信息")
+      .default(false)
+  }).description('debug设置')
 
 ])
 

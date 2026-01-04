@@ -11,6 +11,22 @@ export function isOnlyDigits(str: string): boolean {
 export const light = ['#81a1c1', '#2e3440', '#5e81ac']; // Changed font color to a dark gray
 export const dark = ['#2e3440', '#ffffff', '#434c5e'];
 
+/**
+ * 获取图片的 Base64 编码
+ */
+async function getImageBase64(ctx: Context, axiosInstance: any, url: string): Promise<string> {
+  if (!url) return '';
+  try {
+    const response = await axiosInstance.get(url, { responseType: 'arraybuffer' });
+    const base64 = Buffer.from(response.data, 'binary').toString('base64');
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    return `data:${contentType};base64,${base64}`;
+  } catch (e) {
+    ctx.logger.warn(`[cs-lookup] 转换图片为Base64失败: ${url}, error: ${e.message}`);
+    return url; // 回退到原始 URL
+  }
+}
+
 export function inv(ctx: Context, config: any) {
   const axiosWithProxy = createAxiosInstance(config);
 
@@ -62,20 +78,29 @@ export function inv(ctx: Context, config: any) {
       if (!isOnlyDigits(STEAMID)) {
         return "无效steamID, 若不知道steamID请使用指令 `getid Steam个人资料页链接` 获取";
       }
-      const playerUrl = `https://us-cc.vincentzyu233.cn/fastapi_wrap/cs/player/${STEAMID}`;
-      const invUrl = `https://us-cc.vincentzyu233.cn/fastapi_wrap/cs/inv/${STEAMID}`;
-      // const invUrl = `https://steamcommunity.com/inventory/${STEAMID}/730/2?l=schinese`
+
+      // 使用官方 Steam API 替换原有的 us-cc 代理
+      const playerUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${config.steamWebApiKey}&steamids=${STEAMID}`;
+      const invUrl = `https://steamcommunity.com/inventory/${STEAMID}/730/2?l=schinese`;
+      
       const currentColorArr = config.enableDarkTheme ? dark : light;
 
 
       try {
+        if (!config.steamWebApiKey) {
+          throw new Error('未配置 Steam Web API Key，请在插件设置中填写。');
+        }
+
         const userRes = await axiosWithProxy.get(playerUrl);
         const playerAvatarFullUrl = userRes?.data?.response?.players[0]?.avatarfull;
-        const proxiedPlayerAvatarFullUrl = `https://us-cc.vincentzyu233.cn/fastapi_wrap/image_proxy?url=${playerAvatarFullUrl}`;
+        
+        // 将头像转为 Base64
+        const proxiedPlayerAvatarFullUrl = await getImageBase64(ctx, axiosWithProxy, playerAvatarFullUrl);
+        
         ctx.logger.info(`playerAvatarFullUrl = ${playerAvatarFullUrl}`);
-        const playerPersonName = userRes?.data?.response?.players[0]?.personaname;
+        const playerPersonName = userRes?.data?.response?.players[0]?.personaname || '未知用户';
         const playerLastLogoff = userRes?.data?.response?.players[0]?.lastlogoff;
-        const playerLastLogoffTimeStr = (new Date(playerLastLogoff * 1000)).toLocaleString();
+        const playerLastLogoffTimeStr = playerLastLogoff ? (new Date(playerLastLogoff * 1000)).toLocaleString() : '未知';
 
         const invRes = await axiosWithProxy.get(invUrl);
         const invData = invRes.data;
@@ -104,7 +129,9 @@ export function inv(ctx: Context, config: any) {
             const itemName = item.market_name;
             const imageUrl = "https://community.cloudflare.steamstatic.com/economy/image/" + item.icon_url;
             if (!itemMap.has(itemName)) {
-              itemMap.set(itemName, { count: 0, imageUrl: imageUrl });
+              // 将饰品图片转为 Base64
+              const base64Image = await getImageBase64(ctx, axiosWithProxy, imageUrl);
+              itemMap.set(itemName, { count: 0, imageUrl: base64Image });
             }
             let itemInfo = itemMap.get(itemName);
             itemInfo.count += 1;
@@ -134,8 +161,28 @@ export function inv(ctx: Context, config: any) {
 
         const html = generateHtml(cardHtml, gridColumns, totalStr, STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme, config.enableAvatarBackground);
         const invPage = await ctx.puppeteer.page();
-        await invPage.setContent(html);
-        await invPage.waitForSelector('.main-card');
+        
+        if (config.verboseConsoleLog) {
+          ctx.logger.info(`[debug] 正在设置页面内容...`);
+        }
+        
+        await invPage.setContent(html, {
+          waitUntil: config.waitUntil || 'domcontentloaded'
+        });
+
+        if (config.verboseConsoleLog) {
+          ctx.logger.info(`[debug] 正在等待图片加载...`);
+        }
+
+        // 等待图片加载，最多等待 15 秒
+        try {
+          await invPage.waitForFunction(() => {
+            const allImages = Array.from(document.querySelectorAll('.card-item-image, .avatar'));
+            return allImages.every(img => (img as HTMLImageElement).complete);
+          }, { timeout: 15000 });
+        } catch (err) {
+          ctx.logger.warn(`[debug] 部分图片加载超时，将继续渲染`);
+        }
 
         await invPage.setViewport({ width: 1666, height: pageHeight });
 
@@ -148,11 +195,17 @@ export function inv(ctx: Context, config: any) {
         if (config.imageType !== 'png') {
           screenshotOptions.quality = config.imageQuality || 60;
         }
+        
+        if (config.verboseConsoleLog) {
+          ctx.logger.info(`[debug] 正在截取屏幕...`);
+        }
+        
         const invImageRes = await invPage.screenshot(screenshotOptions);
         const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
         await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
 
       } catch (e) {
+        ctx.logger.error(`[cs-lookup] 发生错误: ${e.stack || e}`);
         let cardHtml = '';
 
         let errorMessage = "发生未知错误";
@@ -162,7 +215,7 @@ export function inv(ctx: Context, config: any) {
             errorMessage = `\n\t获取CS2库存失败，可能是对方未公开库存。`;
           }
         }
-        errorMessage += `err = ${JSON.stringify(errorMessage)}`;
+        errorMessage += ` err = ${e.message || e}`;
         
         cardHtml = `
             <div style="text-align: center; padding: 50px; font-size: 20px; font-weight: bold; color: ${currentColorArr[1]}; background-color: rgba(255, 255, 255, 0.15); border-radius: 20px;">
@@ -170,28 +223,43 @@ export function inv(ctx: Context, config: any) {
             </div>
         `;
 
-        const userRes = await axiosWithProxy.get(playerUrl);
-        const playerAvatarFullUrl = userRes?.data?.response?.players[0]?.avatarfull;
-        const proxiedPlayerAvatarFullUrl = `https://us-cc.vincentzyu233.cn/fastapi_wrap/image_proxy?url=${playerAvatarFullUrl}`;
-        const playerPersonName = userRes?.data?.response?.players[0]?.personaname;
-        const playerLastLogoff = userRes?.data?.response?.players[0]?.lastlogoff;
-        const playerLastLogoffTimeStr = (new Date(playerLastLogoff * 1000)).toLocaleString();
+        // 尝试获取用户信息以渲染错误页面
+        let playerPersonName = '未知用户';
+        let proxiedPlayerAvatarFullUrl = '';
+        let playerLastLogoffTimeStr = '未知';
+
+        try {
+          if (config.steamWebApiKey) {
+            const userRes = await axiosWithProxy.get(playerUrl);
+            const playerAvatarFullUrl = userRes?.data?.response?.players[0]?.avatarfull;
+            proxiedPlayerAvatarFullUrl = await getImageBase64(ctx, axiosWithProxy, playerAvatarFullUrl);
+            playerPersonName = userRes?.data?.response?.players[0]?.personaname || '未知用户';
+            const playerLastLogoff = userRes?.data?.response?.players[0]?.lastlogoff;
+            if (playerLastLogoff) {
+              playerLastLogoffTimeStr = (new Date(playerLastLogoff * 1000)).toLocaleString();
+            }
+          }
+        } catch (err) {
+          ctx.logger.warn(`[cs-lookup] 渲染错误页面时获取用户信息失败: ${err.message}`);
+        }
 
         const invHtml = generateHtml(cardHtml, 1, '总物品数: ??', STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme, config.enableAvatarBackground);
         const invPage = await ctx.puppeteer.page();
-        // await invPage.setContent(invHtml);
+        
         await invPage.setContent(invHtml, {
-            waitUntil: ['domcontentloaded'] // 等待 DOM 树加载完毕
+            waitUntil: config.waitUntil || 'domcontentloaded'
         });
 
-        // await invPage.waitForSelector('.main-card');
-        await invPage.waitForFunction(() => {
-            const avatar = document.querySelector('.avatar') as HTMLImageElement;
-            
-            const allImages = Array.from(document.querySelectorAll('.card-item-image, .avatar'));
-            return allImages.every(img => (img as HTMLImageElement).complete);
-        }, { timeout: 15000 });
-        await invPage.setViewport({ width: 1666, height: 500 }); // fixed height for error page
+        try {
+          await invPage.waitForFunction(() => {
+              const allImages = Array.from(document.querySelectorAll('.card-item-image, .avatar'));
+              return allImages.every(img => (img as HTMLImageElement).complete);
+          }, { timeout: 5000 });
+        } catch (err) {
+          // 忽略错误页面的图片加载超时
+        }
+        
+        await invPage.setViewport({ width: 1666, height: 500 });
 
         const screenshotOptionsErr: any = {
           encoding: 'base64',
