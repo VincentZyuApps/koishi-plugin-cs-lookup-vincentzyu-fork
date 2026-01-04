@@ -135,9 +135,9 @@ export function inv(ctx: Context, config: any) {
   const axiosWithProxy = createAxiosInstance(config);
 
   const umamiD = umami;
-  ctx.command('cs-inv', '查看CS背包', { authority: 0 })
-    .option('arg1_steamid', '-s, --steamid <arg1_steamid:string> steam的id')
-    .action(async ({ session, options }) => {
+  ctx.command('cs-inv [targetUser:text]', '查看CS背包', { authority: 0 })
+    .option('steamid', '-s, --steamid <steamid:string> 直接指定steam的id')
+    .action(async ({ session, options }, targetUser) => {
       // ========== 时间统计 ==========
       const timingEnabled = config.verboseConsoleLog;
       const startTime = Date.now();
@@ -164,28 +164,37 @@ export function inv(ctx: Context, config: any) {
         });
       }
 
-      ctx.logger.info(`options.arg1_steamId = ${options.arg1_steamid}`);
-      const first_at_user = h.parse(session.content).find(e => e.type === 'at') ?? null;
-      ctx.logger.info(`first_at_user = ${JSON.stringify(first_at_user)}`);
-
       let PLATFORM = session.platform;
-      let USERID;
+      let USERID = session.userId;
       let STEAMID;
 
-      if (first_at_user) {
-        USERID = first_at_user.attrs.id;
-      } else {
-        USERID = session.userId;
+      // 处理 targetUser 参数（可以是 @用户 或者 userid）
+      if (targetUser) {
+        const userIdRegex = /<at id="([^"]+)"(?: name="([^"]+)")?\/>/;
+        const match = targetUser.match(userIdRegex);
+        if (match) {
+          // 是艾特格式
+          USERID = match[1];
+          ctx.logger.info(`[cs-lookup] 解析到艾特用户: ${USERID}`);
+        } else {
+          // 不是艾特，当作 userid 处理
+          USERID = targetUser.trim();
+          ctx.logger.info(`[cs-lookup] 使用 userid: ${USERID}`);
+        }
       }
 
-      if (options.arg1_steamid) {
-        STEAMID = options.arg1_steamid;
-      } else if (!options.arg1_steamid) {
+      // 如果通过 -s 指定了 steamid，直接使用
+      if (options.steamid) {
+        STEAMID = options.steamid;
+        ctx.logger.info(`[cs-lookup] 使用 -s 指定的 steamid: ${STEAMID}`);
+      } else {
+        // 否则从数据库查询绑定的 steamid
         const res = await ctx.database.get('cs_lookup', { userid: USERID, platform: PLATFORM });
         if (res.length) {
           STEAMID = res[0].steamId;
+          ctx.logger.info(`[cs-lookup] 从数据库查询到 steamid: ${STEAMID}`);
         } else {
-          return "请提供 steamID 或者使用 `getid` 命令获取或者使用 `csBind <steamID>` 进行绑定";
+          return `请提供 steamID 或者使用 \`getid\` 命令获取或者使用 \`cs-bind <steamID>\` 进行绑定\n(查询的用户: ${USERID})`;
         }
       }
 
@@ -401,7 +410,7 @@ export function inv(ctx: Context, config: any) {
         await invPage.setContent(html, {
           waitUntil: config.waitUntil || 'domcontentloaded'
         });
-        logTiming('Puppeteer设置页面内容');
+        logTiming('Pptr设置页面内容');
 
         if (config.verboseConsoleLog) {
           ctx.logger.info(`[debug] 正在等待图片加载...`);
@@ -416,7 +425,7 @@ export function inv(ctx: Context, config: any) {
         } catch (err) {
           ctx.logger.warn(`[debug] 部分图片加载超时，将继续渲染`);
         }
-        logTiming('Puppeteer等待图片加载');
+        logTiming('Pptr等待图片加载');
 
         await invPage.setViewport({ width: 1666, height: pageHeight });
 
@@ -435,7 +444,7 @@ export function inv(ctx: Context, config: any) {
         }
         
         const invImageRes = await invPage.screenshot(screenshotOptions);
-        logTiming('Puppeteer截图完成');
+        logTiming('Pptr截图完成');
         
         const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
         await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
@@ -446,7 +455,7 @@ export function inv(ctx: Context, config: any) {
           const totalTime = Date.now() - startTime;
           ctx.logger.info(`[cs-lookup] ========== 时间统计汇总 ==========`);
           for (const [label, time] of Object.entries(timing)) {
-            ctx.logger.info(`[cs-lookup]   ${label}: ${time}ms`);
+            ctx.logger.info(`[cs-lookup]   ${label}:\t${time}ms`);
           }
           ctx.logger.info(`[cs-lookup]   总耗时: ${totalTime}ms`);
           ctx.logger.info(`[cs-lookup] ====================================`);
