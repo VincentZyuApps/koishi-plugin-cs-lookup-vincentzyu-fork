@@ -122,26 +122,34 @@ export function inv(ctx: Context, config: any) {
           }
 
           totalStr = `总物品数: ${invData.total_inventory_count}`;
-          // 动态计算高度，每行4个卡片，每个卡片高度约300px，加上padding
-          const rowCount = Math.ceil(itemMap.size / 4);
-          pageHeight = rowCount * 65 + 130;
+          const CARD_HEIGHT_CALC = 130; // 与样式中卡片高度保持一致
+          const GAP_CALC = 16;          // 与网格间距保持一致
+          // 动态计算高度：
+          // PAGE_PADDING=32*2=64，MAIN_CARD_PADDING=28*2=56，HEADER=120，GAP=16
+          // 网格高度 = rowCount * CARD_HEIGHT + (rowCount - 1) * GAP
+          // 总高度 = 64 + 56 + 120 + rowCount*(CARD_HEIGHT+GAP) - GAP = 240 + rowCount*(CARD_HEIGHT+GAP) - GAP
+          const rowCount = Math.ceil(itemMap.size / gridColumns);
+          pageHeight = 240 + rowCount * (CARD_HEIGHT_CALC + GAP_CALC) - GAP_CALC;
         }
 
-        const html = generateHtml(cardHtml, gridColumns, totalStr, STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme);
+        const html = generateHtml(cardHtml, gridColumns, totalStr, STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme, config.enableAvatarBackground);
         const invPage = await ctx.puppeteer.page();
         await invPage.setContent(html);
         await invPage.waitForSelector('.main-card');
 
         await invPage.setViewport({ width: 1666, height: pageHeight });
 
-        const invImageRes = await invPage.screenshot({
+        const screenshotOptions: any = {
           encoding: 'base64',
-          type: 'jpeg',
+          type: config.imageType || 'jpeg',
           omitBackground: true,
           fullPage: true,
-          quality: config.imageQuality
-        });
-        const invImageBase64 = `data:image/png;base64,${invImageRes}`;
+        };
+        if (config.imageType !== 'png') {
+          screenshotOptions.quality = config.imageQuality || 60;
+        }
+        const invImageRes = await invPage.screenshot(screenshotOptions);
+        const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
         await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
 
       } catch (e) {
@@ -169,7 +177,7 @@ export function inv(ctx: Context, config: any) {
         const playerLastLogoff = userRes?.data?.response?.players[0]?.lastlogoff;
         const playerLastLogoffTimeStr = (new Date(playerLastLogoff * 1000)).toLocaleString();
 
-        const invHtml = generateHtml(cardHtml, 1, '总物品数: ??', STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme);
+        const invHtml = generateHtml(cardHtml, 1, '总物品数: ??', STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme, config.enableAvatarBackground);
         const invPage = await ctx.puppeteer.page();
         // await invPage.setContent(invHtml);
         await invPage.setContent(invHtml, {
@@ -185,14 +193,17 @@ export function inv(ctx: Context, config: any) {
         }, { timeout: 15000 });
         await invPage.setViewport({ width: 1666, height: 500 }); // fixed height for error page
 
-        const invImageRes = await invPage.screenshot({
+        const screenshotOptionsErr: any = {
           encoding: 'base64',
-          type: 'jpeg',
+          type: config.imageType || 'jpeg',
           omitBackground: true,
           fullPage: true,
-          quality: config.imageQuality
-        });
-        const invImageBase64 = `data:image/png;base64,${invImageRes}`;
+        };
+        if (config.imageType !== 'png') {
+          screenshotOptionsErr.quality = config.imageQuality || 60;
+        }
+        const invImageRes = await invPage.screenshot(screenshotOptionsErr);
+        const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
         await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
         
       } finally {
@@ -206,33 +217,57 @@ export function inv(ctx: Context, config: any) {
     });
 }
 
-export function generateHtml(cardHTML, grid_columns: number, totalStr, steamId, steamName, playerAvatarUrl, playerLastLogoffTimeStr, theme: boolean): string {
+export function generateHtml(cardHTML, grid_columns: number, totalStr, steamId, steamName, playerAvatarUrl, playerLastLogoffTimeStr, theme: boolean, enableAvatarBackground: boolean = false): string {
   const current = theme ? dark : light;
   const opacity = theme ? '0.2' : '0.7';
   const backgroundColor = theme ? '#000000' : '#ffffff';
-  const fontColor = theme ? '#ffffff' : '#2e3440'; // Use a different variable for font color
+  const fontColor = theme ? '#ffffff' : '#2e3440';
+
+  // 背景样式：如果启用头像背景则显示模糊头像，否则隐藏
+  const backgroundBlurDisplay = enableAvatarBackground ? 'block' : 'none';
+  // 磨砂玻璃效果：如果启用头像背景则增强模糊效果
+  const mainCardBlur = enableAvatarBackground ? 'blur(20px)' : 'blur(5px)';
+  const mainCardBg = enableAvatarBackground ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.1)';
+  const headerCardBg = enableAvatarBackground ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.2)';
+  const headerCardBlur = enableAvatarBackground ? 'blur(15px)' : 'blur(10px)';
+  const cardItemBg = enableAvatarBackground ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.15)';
+  const cardItemBlur = enableAvatarBackground ? 'blur(12px)' : 'blur(10px)';
+
+  // ========== 核心布局参数 ==========
+  const CARD_HEIGHT = 130;      // 每个卡片的固定高度（放大 1.3x）
+  const GAP = 16;               // 网格间距
+  const PAGE_PADDING = 32;      // 页面上下内边距
+  const MAIN_CARD_PADDING = 28; // 主卡片内边距
+  const HEADER_HEIGHT = 120;    // header 区域高度（包含 margin-bottom）
 
   return `
+    <!DOCTYPE html>
+    <html lang="zh-CN">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>CS 库存查询</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
         body {
           font-family: 'Noto Sans SC', sans-serif;
           background-color: ${current[0]};
           color: ${fontColor};
-          margin: 0;
-          padding: 0;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+          padding: ${PAGE_PADDING}px 24px;
           min-height: 100vh;
           position: relative;
         }
+        
         .background-blur {
-          position: absolute;
+          display: ${backgroundBlurDisplay};
+          position: fixed;
           top: 0;
           left: 0;
           width: 100%;
@@ -246,94 +281,114 @@ export function generateHtml(cardHTML, grid_columns: number, totalStr, steamId, 
           background-blend-mode: overlay;
           background-color: ${backgroundColor};
         }
-        .container {
-          width: 90%;
-          max-width: 1400px;
-          padding: 40px;
-        }
+        
         .main-card {
-          background-color: rgba(255, 255, 255, 0.1);
-          border-radius: 30px;
-          padding: 40px;
+          background-color: ${mainCardBg};
+          border-radius: 20px;
+          padding: ${MAIN_CARD_PADDING}px;
           box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
           border: 1px solid rgba(255, 255, 255, 0.18);
-          backdrop-filter: blur(5px);
-          -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: ${mainCardBlur};
+          -webkit-backdrop-filter: ${mainCardBlur};
+          max-width: 1500px;
+          margin: 0 auto;
         }
+        
         .header-card {
-          background-color: rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border-radius: 20px;
-          padding: 20px;
-          margin-bottom: 30px;
+          background-color: ${headerCardBg};
+          backdrop-filter: ${headerCardBlur};
+          -webkit-backdrop-filter: ${headerCardBlur};
+          border-radius: 16px;
+          padding: 16px 20px;
+          margin-bottom: 20px;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 16px;
         }
+        
         .header-card h1 {
-          font-size: 32px;
+          font-size: 26px;
           font-weight: bold;
-          margin: 0;
+          margin-bottom: 4px;
           text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
+        
         .header-card .subtitle {
-          font-size: 16px;
-          color: ${fontColor};
-        }
-        .header-card .last-logoff {
           font-size: 14px;
           color: ${fontColor};
-          margin-top: 5px;
+          opacity: 0.9;
         }
+        
+        .header-card .last-logoff {
+          font-size: 13px;
+          color: ${fontColor};
+          opacity: 0.8;
+          margin-top: 4px;
+        }
+        
         .avatar {
-          width: 80px;
-          height: 80px;
+          width: 72px;
+          height: 72px;
           border-radius: 50%;
           border: 3px solid ${fontColor};
           box-shadow: 0 0 10px rgba(0,0,0,0.5);
+          flex-shrink: 0;
         }
+        
         .grid-container {
           display: grid;
-          grid-template-columns: repeat(${grid_columns}, minmax(250px, 1fr));
-          gap: 20px;
+          grid-template-columns: repeat(${grid_columns}, 1fr);
+          gap: ${GAP}px;
         }
+        
         .card-item {
-          background-color: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border-radius: 20px;
-          padding: 20px;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+          background-color: ${cardItemBg};
+          backdrop-filter: ${cardItemBlur};
+          -webkit-backdrop-filter: ${cardItemBlur};
+          border-radius: 12px;
+          padding: 12px 10px;
+          box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
           text-align: center;
           overflow: hidden;
           position: relative;
+          height: ${CARD_HEIGHT}px;
         }
+        
         .card-item-title {
           font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 10px;
+          font-weight: 700;
+          line-height: 1.35;
           word-wrap: break-word;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
           max-width: 100%;
           position: relative;
           z-index: 2;
+          margin: 0;
         }
+        
         .card-image-container {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 150%;
-          height: 150%;
+          width: 182%;
+          height: 182%;
           display: flex;
           justify-content: center;
           align-items: center;
           overflow: hidden;
+          pointer-events: none;
         }
+        
         .card-item-image {
           width: 100%;
           height: 100%;
@@ -344,22 +399,21 @@ export function generateHtml(cardHTML, grid_columns: number, totalStr, steamId, 
     </head>
     <body>
       <div class="background-blur"></div>
-      <div class="container">
-        <div class="main-card">
-          <div class="header-card">
-            <img src="${playerAvatarUrl}" alt="Player Avatar" class="avatar" id="avatar-image">
-            <div>
-              <h1>CS 库存查询 - ${steamName}</h1>
-              <div class="subtitle">(${steamId})</div>
-              <div class="subtitle">${totalStr}</div>
-              <div class="last-logoff">最后在线时间: ${playerLastLogoffTimeStr}</div>
-            </div>
+      <div class="main-card">
+        <div class="header-card">
+          <img src="${playerAvatarUrl}" alt="Player Avatar" class="avatar" id="avatar-image">
+          <div>
+            <h1>CS 库存查询 - ${steamName}</h1>
+            <div class="subtitle">(${steamId})</div>
+            <div class="subtitle">${totalStr}</div>
+            <div class="last-logoff">最后在线时间: ${playerLastLogoffTimeStr}</div>
           </div>
-          <div class="grid-container">
-            ${cardHTML}
-          </div>
+        </div>
+        <div class="grid-container">
+          ${cardHTML}
         </div>
       </div>
     </body>
+    </html>
   `;
 }
