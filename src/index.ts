@@ -78,7 +78,7 @@ export const Config = Schema.intersect([
       .description("🔍 chrome打开chrome://version页面，找到用户代理")
       .role('textarea', { rows: [2, 10] }),
     cookie: Schema.string()
-      .description("🍪 浏览器访问steam库存链接，然后F12打开Network，找到这个请求的cookie填入。")
+      .description("🍪 浏览器访问steam库存链接，然后F12打开Network，找到这个请求的cookie填入。 <br/> https://steamcommunity.com/inventory/76561198307564265/730/2?l=schinese%EF%BC%8C ")
       .role('textarea', { rows: [2, 10] }),
   }).description("🔌 代理配置")
 

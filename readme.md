@@ -1,6 +1,8 @@
 # cs-lookup
 > fork的时候 原插件的版本: 1.0.1
 
+> todo: 增加readme，写 相较于上游仓库 增加的功能捏
+
 ---
 > 以下是原插件的README.md
 
