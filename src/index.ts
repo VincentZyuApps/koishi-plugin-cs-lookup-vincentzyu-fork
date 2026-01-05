@@ -61,6 +61,35 @@ export const Config = Schema.intersect([
     ])
       .default('domcontentloaded')
       .description('⏳ 页面加载等待策略'),
+    showItemCount: Schema.boolean()
+      .default(true)
+      .description('🔢 是否显示饰品总数量'),
+    itemCountCorner: Schema.union([
+      Schema.const('top-left').description('↖️ 左上角'),
+      Schema.const('top-right').description('↗️ 右上角'),
+      Schema.const('bottom-left').description('↙️ 左下角'),
+      Schema.const('bottom-right').description('↘️ 右下角'),
+    ])
+      .default('top-right')
+      .description('📍 饰品数量显示位置'),
+    itemNamePosition: Schema.union([
+      Schema.const('top').description('⬆️ 饰品上方'),
+      Schema.const('center').description('⏺️ 饰品中间'),
+      Schema.const('bottom').description('⬇️ 饰品下方'),
+    ])
+      .default('bottom')
+      .description('📝 饰品名称显示位置'),
+    itemNameBgOpacity: Schema.number()
+      .default(0.6)
+      .min(0).max(1).step(0.05)
+      .description('🌫️ 饰品名称底纹透明度 (0-1)'),
+    itemImageScale: Schema.number()
+      .default(222)
+      .min(50).max(300).step(1)
+      .description('🖼️ 饰品图片大小 (50-300%，默认222%)'),
+    customFontPath: Schema.string()
+      .default('')
+      .description('🔤 自定义字体文件绝对路径 (如 C:/Fonts/my.ttf，留空使用默认字体)'),
   }).description("🎨 puppeteer网页截图配置"),
   
   Schema.object({

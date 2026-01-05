@@ -17,6 +17,71 @@ export const dark = ['#2e3440', '#ffffff', '#434c5e'];
 const CACHE_DIR = path.join(__dirname, '..', 'cache', 'inv_image');
 const INV_DATA_DIR = path.join(__dirname, '..', 'cache', 'inv_data');
 
+// 字体相关常量
+const BASE_FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Microsoft YaHei", "PingFang SC", sans-serif';
+const CUSTOM_FONT_FAMILY = 'CSLookupCustomFont';
+
+/**
+ * 获取字体格式
+ */
+function getFontFormat(ext: string): string {
+  if (ext === '.otf') return 'opentype';
+  if (ext === '.woff2') return 'woff2';
+  if (ext === '.woff') return 'woff';
+  return 'truetype';
+}
+
+/**
+ * 获取字体 MIME 类型
+ */
+function getFontMimeType(ext: string): string {
+  if (ext === '.otf') return 'font/otf';
+  if (ext === '.woff2') return 'font/woff2';
+  if (ext === '.woff') return 'font/woff';
+  return 'font/ttf';
+}
+
+interface CustomFontConfig {
+  css: string;
+  fontFamily: string;
+}
+
+/**
+ * 构建自定义字体配置
+ */
+function buildCustomFontConfig(ctx: Context, fontPath?: string | null): CustomFontConfig | null {
+  if (!fontPath || fontPath.trim() === '') return null;
+  
+  const resolvedPath = path.isAbsolute(fontPath) ? fontPath : path.resolve(fontPath);
+  if (!fs.existsSync(resolvedPath)) {
+    ctx.logger.warn(`[cs-lookup] 自定义字体文件不存在: ${resolvedPath}`);
+    return null;
+  }
+
+  try {
+    const buffer = fs.readFileSync(resolvedPath);
+    const ext = path.extname(resolvedPath).toLowerCase();
+    const format = getFontFormat(ext);
+    const mime = getFontMimeType(ext);
+    
+    const css = `@font-face {
+      font-family: '${CUSTOM_FONT_FAMILY}';
+      src: url('data:${mime};base64,${buffer.toString('base64')}') format('${format}');
+      font-weight: normal;
+      font-style: normal;
+    }`;
+    
+    ctx.logger.debug(`[cs-lookup] 成功加载自定义字体: ${resolvedPath}`);
+    return {
+      css,
+      fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`
+    };
+  } catch (e) {
+    ctx.logger.warn(`[cs-lookup] 加载自定义字体失败: ${e}`);
+    return null;
+  }
+}
+
 /**
  * 确保缓存目录存在
  */
@@ -327,9 +392,9 @@ export function inv(ctx: Context, config: any) {
           gridColumns = 1;
           totalStr = `总物品数: 0`;
           cardHtml = `
-            <div style="text-align: center; padding: 50px; font-size: 24px; font-weight: bold; color: ${currentColorArr[1]}; background-color: rgba(255, 255, 255, 0.15); border-radius: 20px;">该用户没有CS2库存</div>
+            <div class="empty-message">📦 该用户没有CS2库存</div>
           `;
-          pageHeight = 500;
+          pageHeight = 400;
         } else {
           // 否则，正常处理库存数据
           ctx.logger.info(`invData有有descriptions字段。`);
@@ -379,28 +444,45 @@ export function inv(ctx: Context, config: any) {
           logTiming('转换饰品图片为Base64');
 
           for (const [itemName, itemInfo] of itemMap.entries()) {
+            const countBadge = itemInfo.count > 1 ? `<span class="item-count">x${itemInfo.count}</span>` : '';
             cardHtml += `
-              <div class="card-item">
-                <h2 class="card-item-title">${itemName}</h2>
-                <div class="card-image-container">
-                  <img src="${itemInfo.imageUrl}" alt="${itemName}" class="card-item-image">
+              <div class="item-card">
+                ${countBadge}
+                <div class="item-image-wrapper">
+                  <img src="${itemInfo.imageUrl}" alt="${itemName}" class="item-image">
                 </div>
+                <div class="item-name">${itemName}</div>
               </div>
             `;
           }
 
           totalStr = `总物品数: ${invData.total_inventory_count}`;
-          const CARD_HEIGHT_CALC = 130; // 与样式中卡片高度保持一致
-          const GAP_CALC = 16;          // 与网格间距保持一致
-          // 动态计算高度：
-          // PAGE_PADDING=32*2=64，MAIN_CARD_PADDING=28*2=56，HEADER=120，GAP=16
-          // 网格高度 = rowCount * CARD_HEIGHT + (rowCount - 1) * GAP
-          // 总高度 = 64 + 56 + 120 + rowCount*(CARD_HEIGHT+GAP) - GAP = 240 + rowCount*(CARD_HEIGHT+GAP) - GAP
+          const CARD_HEIGHT_CALC = 150; // 与样式中卡片高度保持一致
+          const GAP_CALC = 8;           // 与网格间距保持一致
           const rowCount = Math.ceil(itemMap.size / gridColumns);
-          pageHeight = 240 + rowCount * (CARD_HEIGHT_CALC + GAP_CALC) - GAP_CALC;
+          pageHeight = 150 + rowCount * (CARD_HEIGHT_CALC + GAP_CALC) + 40;
         }
 
-        const html = generateHtml(cardHtml, gridColumns, totalStr, STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme, config.enableAvatarBackground);
+        // 构建自定义字体配置
+        const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
+        
+        const html = generateHtml({
+          cardHTML: cardHtml,
+          gridColumns,
+          totalStr,
+          steamId: STEAMID,
+          steamName: playerPersonName,
+          playerAvatarUrl: proxiedPlayerAvatarFullUrl,
+          playerLastLogoffTimeStr,
+          darkMode: config.enableDarkTheme,
+          enableAvatarBackground: config.enableAvatarBackground,
+          fontConfig,
+          showItemCount: config.showItemCount !== false,
+          itemCountCorner: config.itemCountCorner || 'top-right',
+          itemNamePosition: config.itemNamePosition || 'top',
+          itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6,
+          itemImageScale: config.itemImageScale ?? 100,
+        });
         const invPage = await ctx.puppeteer.page();
         
         if (config.verboseConsoleLog) {
@@ -419,7 +501,7 @@ export function inv(ctx: Context, config: any) {
         // 等待图片加载，最多等待 15 秒
         try {
           await invPage.waitForFunction(() => {
-            const allImages = Array.from(document.querySelectorAll('.card-item-image, .avatar'));
+            const allImages = Array.from(document.querySelectorAll('.item-image, .avatar'));
             return allImages.every(img => (img as HTMLImageElement).complete);
           }, { timeout: 15000 });
         } catch (err) {
@@ -427,7 +509,7 @@ export function inv(ctx: Context, config: any) {
         }
         logTiming('Pptr等待图片加载');
 
-        await invPage.setViewport({ width: 1666, height: pageHeight });
+        await invPage.setViewport({ width: 1500, height: pageHeight });
 
         const screenshotOptions: any = {
           encoding: 'base64',
@@ -475,8 +557,8 @@ export function inv(ctx: Context, config: any) {
         errorMessage += ` err = ${e.message || e}`;
         
         cardHtml = `
-            <div style="text-align: center; padding: 50px; font-size: 20px; font-weight: bold; color: ${currentColorArr[1]}; background-color: rgba(255, 255, 255, 0.15); border-radius: 20px;">
-                ${errorMessage}
+            <div class="empty-message">
+                ❌ ${errorMessage}
             </div>
         `;
 
@@ -497,7 +579,23 @@ export function inv(ctx: Context, config: any) {
           ctx.logger.warn(`[cs-lookup] 渲染错误页面时获取用户信息失败: ${err.message}`);
         }
 
-        const invHtml = generateHtml(cardHtml, 1, '总物品数: ??', STEAMID, playerPersonName, proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, config.enableDarkTheme, config.enableAvatarBackground);
+        const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
+        const invHtml = generateHtml({
+          cardHTML: cardHtml,
+          gridColumns: 1,
+          totalStr: '总物品数: ??',
+          steamId: STEAMID,
+          steamName: playerPersonName,
+          playerAvatarUrl: proxiedPlayerAvatarFullUrl,
+          playerLastLogoffTimeStr,
+          darkMode: config.enableDarkTheme,
+          enableAvatarBackground: config.enableAvatarBackground,
+          fontConfig,
+          showItemCount: false,
+          itemNamePosition: config.itemNamePosition || 'top',
+          itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6,
+          itemImageScale: config.itemImageScale ?? 100,
+        });
         const invPage = await ctx.puppeteer.page();
         
         await invPage.setContent(invHtml, {
@@ -506,7 +604,7 @@ export function inv(ctx: Context, config: any) {
 
         try {
           await invPage.waitForFunction(() => {
-              const allImages = Array.from(document.querySelectorAll('.card-item-image, .avatar'));
+              const allImages = Array.from(document.querySelectorAll('.item-image, .avatar'));
               return allImages.every(img => (img as HTMLImageElement).complete);
           }, { timeout: 5000 });
         } catch (err) {
@@ -539,203 +637,349 @@ export function inv(ctx: Context, config: any) {
     });
 }
 
-export function generateHtml(cardHTML, grid_columns: number, totalStr, steamId, steamName, playerAvatarUrl, playerLastLogoffTimeStr, theme: boolean, enableAvatarBackground: boolean = false): string {
-  const current = theme ? dark : light;
-  const opacity = theme ? '0.2' : '0.7';
-  const backgroundColor = theme ? '#000000' : '#ffffff';
-  const fontColor = theme ? '#ffffff' : '#2e3440';
+export interface GenerateHtmlOptions {
+  cardHTML: string;
+  gridColumns: number;
+  totalStr: string;
+  steamId: string;
+  steamName: string;
+  playerAvatarUrl: string;
+  playerLastLogoffTimeStr: string;
+  darkMode: boolean;
+  enableAvatarBackground?: boolean;
+  fontConfig?: CustomFontConfig | null;
+  showItemCount?: boolean;
+  itemCountCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  itemNamePosition?: 'top' | 'center' | 'bottom';
+  itemNameBgOpacity?: number;
+  itemImageScale?: number;
+}
 
-  // 背景样式：如果启用头像背景则显示模糊头像，否则隐藏
+export function generateHtml(options: GenerateHtmlOptions): string {
+  const {
+    cardHTML,
+    gridColumns,
+    totalStr,
+    steamId,
+    steamName,
+    playerAvatarUrl,
+    playerLastLogoffTimeStr,
+    darkMode,
+    enableAvatarBackground = false,
+    fontConfig = null,
+    showItemCount = true,
+    itemCountCorner = 'top-right',
+    itemNamePosition = 'top',
+    itemNameBgOpacity = 0.6,
+    itemImageScale = 100,
+  } = options;
+
+  // 字体 CSS
+  const fontFaceCss = fontConfig?.css || '';
+  const fontFamily = fontConfig?.fontFamily || BASE_FONT_STACK;
+
+  // 主题颜色
+  const bgColor = darkMode ? '#1a1a2e' : '#f5f7fa';
+  const containerBg = darkMode ? 'rgba(255, 255, 255, 0.05)' : '#ffffff';
+  const textColor = darkMode ? '#e0e0e0' : '#333333';
+  const mutedColor = darkMode ? '#888888' : '#999999';
+  const borderColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : '#e8e8e8';
+  const cardBg = darkMode ? 'rgba(255, 255, 255, 0.03)' : '#fafafa';
+  const headerBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : '#ffffff';
+  const accentColor = '#1890ff';
+
+  // 背景样式
   const backgroundBlurDisplay = enableAvatarBackground ? 'block' : 'none';
-  // 磨砂玻璃效果：如果启用头像背景则增强模糊效果
-  const mainCardBlur = enableAvatarBackground ? 'blur(20px)' : 'blur(5px)';
-  const mainCardBg = enableAvatarBackground ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.1)';
-  const headerCardBg = enableAvatarBackground ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.2)';
-  const headerCardBlur = enableAvatarBackground ? 'blur(15px)' : 'blur(10px)';
-  const cardItemBg = enableAvatarBackground ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.15)';
-  const cardItemBlur = enableAvatarBackground ? 'blur(12px)' : 'blur(10px)';
+  const backgroundOpacity = darkMode ? '0.15' : '0.3';
 
-  // ========== 核心布局参数 ==========
-  const CARD_HEIGHT = 130;      // 每个卡片的固定高度（放大 1.3x）
-  const GAP = 16;               // 网格间距
-  const PAGE_PADDING = 32;      // 页面上下内边距
-  const MAIN_CARD_PADDING = 28; // 主卡片内边距
-  const HEADER_HEIGHT = 120;    // header 区域高度（包含 margin-bottom）
+  // 布局参数
+  const CARD_HEIGHT = 150;
+  const GAP = 8;
+  const PAGE_PADDING = 16;
 
-  return `
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>CS 库存查询</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
-        
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Noto Sans SC', sans-serif;
-          background-color: ${current[0]};
-          color: ${fontColor};
-          padding: ${PAGE_PADDING}px 24px;
-          min-height: 100vh;
-          position: relative;
-        }
-        
-        .background-blur {
-          display: ${backgroundBlurDisplay};
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-image: url('${playerAvatarUrl}');
-          background-size: cover;
-          background-position: center;
-          filter: blur(30px);
-          z-index: -1;
-          opacity: ${opacity};
-          background-blend-mode: overlay;
-          background-color: ${backgroundColor};
-        }
-        
-        .main-card {
-          background-color: ${mainCardBg};
-          border-radius: 20px;
-          padding: ${MAIN_CARD_PADDING}px;
-          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          backdrop-filter: ${mainCardBlur};
-          -webkit-backdrop-filter: ${mainCardBlur};
-          max-width: 1500px;
-          margin: 0 auto;
-        }
-        
-        .header-card {
-          background-color: ${headerCardBg};
-          backdrop-filter: ${headerCardBlur};
-          -webkit-backdrop-filter: ${headerCardBlur};
-          border-radius: 16px;
-          padding: 16px 20px;
-          margin-bottom: 20px;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-        
-        .header-card h1 {
-          font-size: 26px;
-          font-weight: bold;
-          margin-bottom: 4px;
-          text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .header-card .subtitle {
-          font-size: 14px;
-          color: ${fontColor};
-          opacity: 0.9;
-        }
-        
-        .header-card .last-logoff {
-          font-size: 13px;
-          color: ${fontColor};
-          opacity: 0.8;
-          margin-top: 4px;
-        }
-        
-        .avatar {
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
-          border: 3px solid ${fontColor};
-          box-shadow: 0 0 10px rgba(0,0,0,0.5);
-          flex-shrink: 0;
-        }
-        
-        .grid-container {
-          display: grid;
-          grid-template-columns: repeat(${grid_columns}, 1fr);
-          gap: ${GAP}px;
-        }
-        
-        .card-item {
-          background-color: ${cardItemBg};
-          backdrop-filter: ${cardItemBlur};
-          -webkit-backdrop-filter: ${cardItemBlur};
-          border-radius: 12px;
-          padding: 12px 10px;
-          box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          overflow: hidden;
-          position: relative;
-          height: ${CARD_HEIGHT}px;
-        }
-        
-        .card-item-title {
-          font-size: 18px;
-          font-weight: 700;
-          line-height: 1.35;
-          word-wrap: break-word;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          max-width: 100%;
-          position: relative;
-          z-index: 2;
-          margin: 0;
-        }
-        
-        .card-image-container {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 182%;
-          height: 182%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          overflow: hidden;
-          pointer-events: none;
-        }
-        
-        .card-item-image {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          opacity: 0.5;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="background-blur"></div>
-      <div class="main-card">
-        <div class="header-card">
-          <img src="${playerAvatarUrl}" alt="Player Avatar" class="avatar" id="avatar-image">
-          <div>
-            <h1>CS 库存查询 - ${steamName}</h1>
-            <div class="subtitle">(${steamId})</div>
-            <div class="subtitle">${totalStr}</div>
-            <div class="last-logoff">最后在线时间: ${playerLastLogoffTimeStr}</div>
-          </div>
+  // 物品数量角落位置
+  const cornerPositions: Record<string, string> = {
+    'top-left': 'top: 12px; left: 12px;',
+    'top-right': 'top: 12px; right: 12px;',
+    'bottom-left': 'bottom: 12px; left: 12px;',
+    'bottom-right': 'bottom: 12px; right: 12px;',
+  };
+  const itemCountPosition = cornerPositions[itemCountCorner] || cornerPositions['top-right'];
+
+  // 饰品名称位置样式
+  const namePositionStyles: Record<string, { wrapper: string; justify: string }> = {
+    'top': { 
+      wrapper: 'top: 4px; left: 4px; right: 4px;', 
+      justify: 'flex-start' 
+    },
+    'center': { 
+      wrapper: 'top: 50%; left: 4px; right: 4px; transform: translateY(-50%);', 
+      justify: 'center' 
+    },
+    'bottom': { 
+      wrapper: 'bottom: 4px; left: 4px; right: 4px;', 
+      justify: 'flex-end' 
+    },
+  };
+  const nameStyle = namePositionStyles[itemNamePosition] || namePositionStyles['top'];
+
+  // 饰品名称背景透明度
+  const nameBgColor = darkMode 
+    ? `rgba(0, 0, 0, ${itemNameBgOpacity})` 
+    : `rgba(255, 255, 255, ${itemNameBgOpacity})`;
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS2 库存查询</title>
+  <style>
+    ${fontFaceCss}
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: ${fontFamily};
+      background: ${bgColor};
+      color: ${textColor};
+      padding: ${PAGE_PADDING}px;
+      min-width: 900px;
+      position: relative;
+    }
+    
+    .background-blur {
+      display: ${backgroundBlurDisplay};
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('${playerAvatarUrl}');
+      background-size: cover;
+      background-position: center;
+      filter: blur(15px) saturate(1.3);
+      z-index: -1;
+      opacity: ${backgroundOpacity};
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: ${containerBg};
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid ${borderColor};
+      box-shadow: 0 8px 32px rgba(0, 0, 0, ${darkMode ? '0.3' : '0.1'});
+      position: relative;
+    }
+    
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid ${borderColor};
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: ${headerBg};
+    }
+    
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid ${accentColor};
+      box-shadow: 0 4px 16px rgba(24, 144, 255, 0.3);
+      flex-shrink: 0;
+    }
+    
+    .header-info {
+      flex: 1;
+    }
+    
+    .header-title {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.2;
+    }
+    
+    .header-title .icon {
+      font-size: 52px;
+    }
+    
+    .header-subtitle {
+      font-size: 28px;
+      color: ${mutedColor};
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+    
+    .header-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .meta-item {
+      font-size: 26px;
+      color: ${mutedColor};
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.2;
+    }
+    
+    .item-count-badge {
+      display: ${showItemCount ? 'flex' : 'none'};
+      position: absolute;
+      ${itemCountPosition}
+      background: linear-gradient(135deg, ${accentColor}, #40a9ff);
+      color: white;
+      font-size: 32px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 24px;
+      box-shadow: 0 4px 14px rgba(24, 144, 255, 0.4);
+      z-index: 10;
+    }
+    
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(${gridColumns}, 1fr);
+      gap: ${GAP}px;
+      padding: 12px;
+    }
+    
+    .item-card {
+      background: ${cardBg};
+      border-radius: 10px;
+      border: 1px solid ${borderColor};
+      height: ${CARD_HEIGHT}px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, ${darkMode ? '0.3' : '0.12'});
+    }
+    
+    .item-image-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(${itemImageScale / 100});
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    
+    .item-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+    
+    .item-name {
+      position: absolute;
+      ${nameStyle.wrapper}
+      z-index: 2;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.25;
+      max-height: 2.5em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      text-shadow: ${darkMode ? '0 1px 3px rgba(0,0,0,0.9)' : '0 1px 2px rgba(0,0,0,0.4)'};
+      padding: 4px 6px;
+      background: ${nameBgColor};
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+    
+    .item-count {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: ${darkMode ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.95)'};
+      color: ${textColor};
+      font-size: 14px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 8px;
+      z-index: 3;
+      border: 1px solid ${borderColor};
+      line-height: 1.2;
+    }
+    
+    .footer {
+      padding: 16px 24px;
+      border-top: 1px solid ${borderColor};
+      text-align: center;
+      font-size: 28px;
+      color: ${mutedColor};
+      background: ${headerBg};
+    }
+    
+    .footer a {
+      color: ${accentColor};
+      text-decoration: none;
+    }
+    
+    .empty-message {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 20px;
+      color: ${mutedColor};
+      background: ${cardBg};
+      border-radius: 12px;
+      border: 2px dashed ${borderColor};
+    }
+  </style>
+</head>
+<body>
+  <div class="background-blur"></div>
+  <div class="container">
+    <div class="item-count-badge">
+      📦 ${totalStr}
+    </div>
+    <div class="header">
+      <img src="${playerAvatarUrl}" alt="Avatar" class="avatar">
+      <div class="header-info">
+        <div class="header-title">
+          <span class="icon">🎮</span>
+          ${steamName}
         </div>
-        <div class="grid-container">
-          ${cardHTML}
+        <div class="header-subtitle">Steam ID: ${steamId}</div>
+        <div class="header-meta">
+          <span class="meta-item">🕐 最后在线: ${playerLastLogoffTimeStr}</span>
         </div>
       </div>
-    </body>
-    </html>
-  `;
+    </div>
+    <div class="items-grid">
+      ${cardHTML}
+    </div>
+    <div class="footer">
+      📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork
+    </div>
+  </div>
+</body>
+</html>`;
 }
