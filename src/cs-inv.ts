@@ -482,6 +482,14 @@ export function inv(ctx: Context, config: any) {
           itemNamePosition: config.itemNamePosition || 'top',
           itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6,
           itemImageScale: config.itemImageScale ?? 100,
+          footerCustomText: config.footerCustomText || '',
+          watermarkEnabled: config.watermarkEnabled !== false,
+          watermarkText: config.watermarkText || 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
+          watermarkFontSize: config.watermarkFontSize ?? 16,
+          watermarkAngle: config.watermarkAngle ?? 45,
+          watermarkOpacity: config.watermarkOpacity ?? 0.6,
+          watermarkRowGap: config.watermarkRowGap ?? 60,
+          watermarkColGap: config.watermarkColGap ?? 80,
         });
         const invPage = await ctx.puppeteer.page();
         
@@ -595,6 +603,14 @@ export function inv(ctx: Context, config: any) {
           itemNamePosition: config.itemNamePosition || 'top',
           itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6,
           itemImageScale: config.itemImageScale ?? 100,
+          footerCustomText: config.footerCustomText || '',
+          watermarkEnabled: config.watermarkEnabled !== false,
+          watermarkText: config.watermarkText || 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
+          watermarkFontSize: config.watermarkFontSize ?? 16,
+          watermarkAngle: config.watermarkAngle ?? 45,
+          watermarkOpacity: config.watermarkOpacity ?? 0.6,
+          watermarkRowGap: config.watermarkRowGap ?? 60,
+          watermarkColGap: config.watermarkColGap ?? 80,
         });
         const invPage = await ctx.puppeteer.page();
         
@@ -653,6 +669,14 @@ export interface GenerateHtmlOptions {
   itemNamePosition?: 'top' | 'center' | 'bottom';
   itemNameBgOpacity?: number;
   itemImageScale?: number;
+  footerCustomText?: string;
+  watermarkEnabled?: boolean;
+  watermarkText?: string;
+  watermarkFontSize?: number;
+  watermarkAngle?: number;
+  watermarkOpacity?: number;
+  watermarkRowGap?: number;
+  watermarkColGap?: number;
 }
 
 export function generateHtml(options: GenerateHtmlOptions): string {
@@ -672,6 +696,14 @@ export function generateHtml(options: GenerateHtmlOptions): string {
     itemNamePosition = 'top',
     itemNameBgOpacity = 0.6,
     itemImageScale = 100,
+    footerCustomText = '',
+    watermarkEnabled = true,
+    watermarkText = 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
+    watermarkFontSize = 16,
+    watermarkAngle = 45,
+    watermarkOpacity = 0.6,
+    watermarkRowGap = 60,
+    watermarkColGap = 80,
   } = options;
 
   // 字体 CSS
@@ -690,7 +722,7 @@ export function generateHtml(options: GenerateHtmlOptions): string {
 
   // 背景样式
   const backgroundBlurDisplay = enableAvatarBackground ? 'block' : 'none';
-  const backgroundOpacity = darkMode ? '0.15' : '0.3';
+  const backgroundOpacity = darkMode ? '0.35' : '0.5';
 
   // 布局参数
   const CARD_HEIGHT = 150;
@@ -762,7 +794,7 @@ export function generateHtml(options: GenerateHtmlOptions): string {
       background-image: url('${playerAvatarUrl}');
       background-size: cover;
       background-position: center;
-      filter: blur(15px) saturate(1.3);
+      filter: blur(8px) saturate(1.5);
       z-index: -1;
       opacity: ${backgroundOpacity};
     }
@@ -772,7 +804,6 @@ export function generateHtml(options: GenerateHtmlOptions): string {
       margin: 0 auto;
       background: ${containerBg};
       border-radius: 16px;
-      overflow: hidden;
       border: 1px solid ${borderColor};
       box-shadow: 0 8px 32px rgba(0, 0, 0, ${darkMode ? '0.3' : '0.1'});
       position: relative;
@@ -952,6 +983,33 @@ export function generateHtml(options: GenerateHtmlOptions): string {
       border-radius: 12px;
       border: 2px dashed ${borderColor};
     }
+    
+    .watermark-overlay {
+      display: ${watermarkEnabled ? 'grid' : 'none'};
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      /* 固定 8 列，行数自动根据内容填充 */
+      grid-template-columns: repeat(8, 1fr);
+      grid-auto-rows: ${watermarkRowGap + 30}px;
+      overflow: hidden;
+      align-items: center;
+      justify-items: center;
+    }
+    
+    .watermark-text {
+      white-space: nowrap;
+      font-size: ${watermarkFontSize}px;
+      font-weight: 500;
+      color: ${darkMode ? `rgba(255, 255, 255, ${watermarkOpacity})` : `rgba(0, 0, 0, ${watermarkOpacity})`};
+      user-select: none;
+      font-family: ${fontFamily};
+      transform: rotate(-${watermarkAngle}deg);
+    }
   </style>
 </head>
 <body>
@@ -977,7 +1035,16 @@ export function generateHtml(options: GenerateHtmlOptions): string {
       ${cardHTML}
     </div>
     <div class="footer">
-      📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork
+      ${footerCustomText || 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork'}
+    </div>
+    <div class="watermark-overlay">
+      ${(() => {
+        if (!watermarkEnabled) return '';
+        // 动态生成足够多的水印：8列 x 80行 = 640个，足够覆盖超长图片
+        const cols = 8;
+        const rows = 80;
+        return Array(cols * rows).fill(`<span class="watermark-text">${watermarkText}</span>`).join('');
+      })()}
     </div>
   </div>
 </body>

@@ -88,8 +88,39 @@ export const Config = Schema.intersect([
       .min(50).max(300).step(1)
       .description('🖼️ 饰品图片大小 (50-300%，默认222%)'),
     customFontPath: Schema.string()
+      .role('textarea', { rows: [2, 5] })
       .default('')
       .description('🔤 自定义字体文件绝对路径 (如 C:/Fonts/my.ttf，留空使用默认字体)'),
+    footerCustomText: Schema.string()
+      .default('📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork')
+      .description('📝 底部自定义文字'),
+    watermarkEnabled: Schema.boolean()
+      .default(true)
+      .description('💧 是否启用水印'),
+    watermarkText: Schema.string()
+      .default('koishi-plugin-cs-lookup')
+      .description('💧 水印文字'),
+    watermarkFontSize: Schema.number()
+      .default(16)
+      .min(8).max(72).step(1)
+      .description('🔠 水印字体大小 (px)'),
+    watermarkAngle: Schema.number()
+      .default(45)
+      .min(0).max(360).step(1)
+      .description('📐 水印倾斜角度 (0-360)'),
+    watermarkOpacity: Schema.number()
+      .default(0.4)
+      .min(0).max(1).step(0.01)
+      .role('slider')
+      .description('👁️ 水印不透明度 (0-1)'),
+    watermarkRowGap: Schema.number()
+      .default(30)
+      .min(1).max(200).step(1)
+      .description('↕️ 水印行间距 (px)'),
+    watermarkColGap: Schema.number()
+      .default(20)
+      .min(1).max(300).step(1)
+      .description('↔️ 水印列间距 (px)'),
   }).description("🎨 puppeteer网页截图配置"),
   
   Schema.object({
