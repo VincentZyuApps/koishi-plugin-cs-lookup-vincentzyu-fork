@@ -259,15 +259,17 @@ export function inv(ctx: Context, config: any) {
           STEAMID = res[0].steamId;
           ctx.logger.info(`[cs-lookup] 从数据库查询到 steamid: ${STEAMID}`);
         } else {
-          return `请提供 steamID 或者使用 \`getid\` 命令获取或者使用 \`cs-bind <steamID>\` 进行绑定\n(查询的用户: ${USERID})`;
+          const replyPrefixNoSteamId = config.replyToUser ? h.quote(session.messageId) : '';
+          return `${replyPrefixNoSteamId}请提供 steamID 或者使用 \`getid\` 命令获取或者使用 \`cs-bind <steamID>\` 进行绑定\n(查询的用户: ${USERID})`;
         }
       }
 
       ctx.logger.info(`STEAMID = ${STEAMID}, USERID = ${USERID}`);
-      const waitMsgId = await session.send(`${h.quote(session.messageId)}正在获取steam库存... \n\t steamId = ${STEAMID}\n\t 渲染图片中....`);
+      const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
+      const waitMsgId = await session.send(`${replyPrefix}正在获取steam库存... \n\t steamId = ${STEAMID}\n\t 渲染图片中....`);
 
       if (!isOnlyDigits(STEAMID)) {
-        return "无效steamID, 若不知道steamID请使用指令 `getid Steam个人资料页链接` 获取";
+        return `${replyPrefix}无效steamID, 若不知道steamID请使用指令 \`getid Steam个人资料页链接\` 获取`;
       }
 
       // 优先使用 www.steamwebapi.com 的接口获取玩家信息，配额用尽则回退到官方 API
@@ -537,7 +539,8 @@ export function inv(ctx: Context, config: any) {
         logTiming('Pptr截图完成');
         
         const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
-        await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
+        const replyPrefixResult = config.replyToUser ? h.quote(session.messageId) : '';
+        await session.send(`${replyPrefixResult}查询结果:${h.image(invImageBase64)}`);
         logTiming('图片发送完成');
         
         // 输出时间统计汇总
@@ -640,7 +643,8 @@ export function inv(ctx: Context, config: any) {
         }
         const invImageRes = await invPage.screenshot(screenshotOptionsErr);
         const invImageBase64 = `data:image/${config.imageType || 'jpeg'};base64,${invImageRes}`;
-        await session.send(`${h.quote(session.messageId)}查询结果:${h.image(invImageBase64)}`);
+        const replyPrefixErr = config.replyToUser ? h.quote(session.messageId) : '';
+        await session.send(`${replyPrefixErr}查询结果:${h.image(invImageBase64)}`);
         
       } finally {
         try {

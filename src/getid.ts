@@ -1,4 +1,4 @@
-import { Context } from 'koishi';
+import { Context, h } from 'koishi';
 import { Config } from './index';
 import { } from 'koishi-plugin-umami-statistics-service'
 import { umami } from './index';
@@ -14,6 +14,7 @@ export function apply(ctx: Context, config: any) {
     , { authority: 0 }
   )
     .action(async ({ session }, profLink) => {
+      const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
       if (config.data_collect) {
         ctx.umamiStatisticsService.send({
           dataHostUrl: umami[1],
@@ -27,15 +28,15 @@ export function apply(ctx: Context, config: any) {
       }
       
       if (!profLink) {
-        return '请提供 Steam 个人资料链接';
+        return `${replyPrefix}请提供 Steam 个人资料链接`;
       }
       
       if (!profLink.startsWith("https://steamcommunity.com/")) {
-        return '请输入正确的Steam个人资料链接';
+        return `${replyPrefix}请输入正确的Steam个人资料链接`;
       }
       
       if (!config.steamWebApiKey) {
-        return '未配置 steamWebApiKey，无法使用 getid 功能。请在插件设置中填写来自 steamwebapi.com 的 API Key。';
+        return `${replyPrefix}未配置 steamWebApiKey，无法使用 getid 功能。请在插件设置中填写来自 steamwebapi.com 的 API Key。`;
       }
       
       try {
@@ -43,7 +44,7 @@ export function apply(ctx: Context, config: any) {
         const response = await axiosWithProxy.get(profUrl);
         const data = response.data;
         
-        let result = '用户名: ' +
+        let result = `${replyPrefix}用户名: ` +
           data.personaname +
           '\nSteam ID: ' +
           data.steamid;
@@ -51,10 +52,10 @@ export function apply(ctx: Context, config: any) {
       } catch (e) {
         const status = e.response?.status;
         if (status === 402) {
-          return 'steamwebapi.com 配额已用尽 (402)，请稍后再试或充值配额。';
+          return `${replyPrefix}steamwebapi.com 配额已用尽 (402)，请稍后再试或充值配额。`;
         }
         ctx.logger.error(`[cs-lookup] getid 请求失败: ${e.message}`);
-        return `获取 Steam ID 失败: ${e.message}`;
+        return `${replyPrefix}获取 Steam ID 失败: ${e.message}`;
       }
     });
 }

@@ -27,6 +27,12 @@ export const Config = Schema.intersect([
   }).description("⚙️ 基础设置"),
 
   Schema.object({
+    replyToUser: Schema.boolean()
+      .default(true)
+      .description('💬 是否引用用户触发的消息（响应主动指令的时候 回复用户）'),
+  }).description('📨 通用消息设置'),
+
+  Schema.object({
     enableDarkTheme: Schema.boolean()
       .default(true)
       .description('🌙 使用深色主题'),
@@ -211,5 +217,5 @@ export function apply(ctx: Context, config: any) {
   }, {})
   inv(ctx, config);
   getId(ctx, config);
-  bind(ctx);
+  bind(ctx, config);
 }

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-cs-lookup-vincentzyu-fork",
   "description": "CS:GO/CS2 库存查询",
-  "version": "1.1.0-beta.1+20260106",
+  "version": "1.1.2-beta.1+20260108",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/itzdrli/koishi-plugin-cs-lookup.git"
