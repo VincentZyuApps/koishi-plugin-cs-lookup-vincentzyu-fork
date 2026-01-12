@@ -2,6 +2,7 @@ import { Context, Schema } from 'koishi';
 import { inv } from './cs-inv';
 import { apply as getId } from './getid';
 import { bind } from './cs-bind';
+import { myid } from './cs-myid';
 import { } from 'koishi-plugin-umami-statistics-service';
 import { PROXY_PROTOCOL, IMAGE_TYPES } from './types';
 
@@ -218,4 +219,5 @@ export function apply(ctx: Context, config: any) {
   inv(ctx, config);
   getId(ctx, config);
   bind(ctx, config);
+  myid(ctx, config);
 }
