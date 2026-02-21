@@ -1,12 +1,73 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { HttpProxyAgent } from 'http-proxy-agent';
-import { SocksProxyAgent as Socks4ProxyAgent } from 'socks-proxy-agent'; // socks-proxy-agent supports SOCKS4
 import { PROXY_PROTOCOL } from './types';
-import { Config } from './index';
 
-export function createAxiosInstance(config: any) {
+// 可重试的瞬态网络错误码
+const RETRYABLE_ERROR_CODES = new Set([
+  'ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED', 'EPIPE',
+  'EAI_AGAIN', 'ENOTFOUND', 'ENETUNREACH', 'EHOSTUNREACH',
+]);
+
+// 可重试的错误消息关键词
+const RETRYABLE_ERROR_MESSAGES = [
+  'socket disconnected',
+  'socket hang up',
+  'ECONNRESET',
+  'Client network socket disconnected',
+];
+
+function isRetryableError(e: any): boolean {
+  if (RETRYABLE_ERROR_CODES.has(e.code)) return true;
+  const msg = e.message || '';
+  return RETRYABLE_ERROR_MESSAGES.some(keyword => msg.includes(keyword));
+}
+
+/**
+ * 添加 verbose 模式的 axios 拦截器，输出请求/响应/错误的详细信息
+ */
+function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: string) {
+  instance.interceptors.request.use((reqConfig: any) => {
+    reqConfig._startTime = Date.now();
+    ctx.logger.info(`[cs-lookup] 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
+    if (proxyInfo) {
+      ctx.logger.info(`[cs-lookup] 🔌 via proxy: ${proxyInfo}`);
+    }
+    return reqConfig;
+  });
+
+  instance.interceptors.response.use(
+    (response) => {
+      const elapsed = Date.now() - ((response.config as any)._startTime || 0);
+      const dataLen = response.data
+        ? (typeof response.data === 'string' ? response.data.length
+          : (Buffer.isBuffer(response.data) ? response.data.length
+            : JSON.stringify(response.data).length))
+        : 0;
+      ctx.logger.info(
+        `[cs-lookup] ✅ RESPONSE ${response.status} ${response.statusText} | ` +
+        `${response.config.url} | ${elapsed}ms | ~${(dataLen / 1024).toFixed(1)}KB`
+      );
+      return response;
+    },
+    (error) => {
+      const elapsed = Date.now() - ((error.config as any)?._startTime || 0);
+      const info: string[] = [];
+      if (error.code) info.push(`code=${error.code}`);
+      if (error.response?.status) info.push(`status=${error.response.status}`);
+      if (error.message) info.push(`msg=${error.message}`);
+      ctx.logger.error(
+        `[cs-lookup] ❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`
+      );
+      return Promise.reject(error);
+    }
+  );
+}
+
+export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
+  const verbose = !!(config.verboseConsoleLog && ctx);
+
   const headers: any = {
     'Accept': 'application/json'
   };
@@ -19,16 +80,27 @@ export function createAxiosInstance(config: any) {
     headers['Cookie'] = config.cookie;
   }
 
-  if (!config.proxy.enabled) {
-    return axios.create({
+  if (!config.proxy?.enabled) {
+    if (verbose) {
+      ctx.logger.info(`[cs-lookup] 🔌 代理未启用，使用直连模式`);
+      ctx.logger.info(`[cs-lookup] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+    }
+    const instance = axios.create({
       timeout: 15000,
       headers
     });
+    if (verbose) addVerboseInterceptors(instance, ctx, '');
+    return instance;
   }
 
   const { protocol, host, port } = config.proxy;
   const proxyUrl = `${protocol}://${host}:${port}`;
-  
+
+  if (verbose) {
+    ctx.logger.info(`[cs-lookup] 🔌 代理已启用: ${proxyUrl}`);
+    ctx.logger.info(`[cs-lookup] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+  }
+
   let agent;
   switch (protocol) {
     case PROXY_PROTOCOL.HTTP:
@@ -43,18 +115,54 @@ export function createAxiosInstance(config: any) {
       agent = new SocksProxyAgent(proxyUrl);
       break;
     default:
-      // 如果协议未知，默认不使用代理
-      console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
-      return axios.create({
-        timeout: 15000,
-        headers
-      });
+      if (verbose) {
+        ctx.logger.warn(`[cs-lookup] ⚠️ 未知代理协议: ${protocol}，不使用代理`);
+      } else {
+        console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
+      }
+      const inst = axios.create({ timeout: 15000, headers });
+      if (verbose) addVerboseInterceptors(inst, ctx, '');
+      return inst;
   }
 
-  return axios.create({
+  const instance = axios.create({
     httpAgent: agent,
     httpsAgent: agent,
     timeout: 15000,
     headers
   });
+
+  if (verbose) addVerboseInterceptors(instance, ctx, proxyUrl);
+  return instance;
+}
+
+/**
+ * 带重试的请求封装，用于应对 ECONNRESET / TLS 断连等瞬态网络错误
+ */
+export async function requestWithRetry<T>(
+  fn: () => Promise<T>,
+  options?: { retries?: number; label?: string; ctx?: any }
+): Promise<T> {
+  const maxRetries = options?.retries ?? 2;
+  const label = options?.label ?? 'request';
+  const ctx = options?.ctx;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (!isRetryableError(e) || attempt >= maxRetries) {
+        throw e;
+      }
+      const delay = 1000 * (attempt + 1);
+      if (ctx) {
+        ctx.logger.warn(
+          `[cs-lookup] 🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
+          `${delay}ms 后重试 (剩余 ${maxRetries - attempt - 1} 次)...`
+        );
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error(`[cs-lookup] ${label} 超过最大重试次数`);
 }

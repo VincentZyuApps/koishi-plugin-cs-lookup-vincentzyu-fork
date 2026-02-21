@@ -2,11 +2,11 @@ import { Context, h } from 'koishi';
 import { Config } from './index';
 import { } from 'koishi-plugin-umami-statistics-service'
 import { umami } from './index';
-import { createAxiosInstance } from './proxy';
+import { createAxiosInstance, requestWithRetry } from './proxy';
 
 export function apply(ctx: Context, config: any) {
   const umamiD = umami
-  const axiosWithProxy = createAxiosInstance(config);
+  const axiosWithProxy = createAxiosInstance(config, ctx);
   
   ctx.command(
     'getid <profLink:string>', 
@@ -41,7 +41,10 @@ export function apply(ctx: Context, config: any) {
       
       try {
         const profUrl = `https://www.steamwebapi.com/steam/api/profile?key=${config.steamWebApiKey}&id=${profLink}`;
-        const response = await axiosWithProxy.get(profUrl);
+        const response = await requestWithRetry(
+          () => axiosWithProxy.get(profUrl),
+          { label: 'getid-steamwebapi', ctx }
+        );
         const data = response.data;
         
         let result = `${replyPrefix}用户名: ` +

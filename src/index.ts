@@ -175,12 +175,12 @@ export const Config = Schema.intersect([
 
   Schema.object({
     verboseConsoleLog: Schema.boolean()
-      .description("是否在控制台输出详细信息")
+      .description("🔍 是否在控制台输出详细信息（包括：代理配置、所有网络请求的URL/耗时/大小、重试过程、缓存命中情况等）")
       .default(false),
     verboseFileLog: Schema.boolean()
-      .description("是否将库存数据完整JSON输出到文件 (../cache/inv_data/res.json)")
+      .description("📁 是否将库存数据完整JSON输出到文件 (../cache/inv_data/res.json)")
       .default(false)
-  }).description('debug设置')
+  }).description('🐛 Debug设置')
 
 ])
 

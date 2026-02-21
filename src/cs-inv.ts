@@ -1,6 +1,6 @@
 import { Context, h } from 'koishi';
 import { Config, umami } from './index';
-import { createAxiosInstance } from './proxy';
+import { createAxiosInstance, requestWithRetry } from './proxy';
 import { } from 'koishi-plugin-puppeteer';
 import { } from 'koishi-plugin-umami-statistics-service';
 import * as fs from 'fs';
@@ -149,7 +149,10 @@ function writeInvDataToFile(data: any): void {
 async function getImageBase64(ctx: Context, axiosInstance: any, url: string): Promise<string> {
   if (!url) return '';
   try {
-    const response = await axiosInstance.get(url, { responseType: 'arraybuffer' });
+    const response = await requestWithRetry(
+      () => axiosInstance.get(url, { responseType: 'arraybuffer' }),
+      { label: `getImageBase64(${url})`, ctx }
+    );
     const base64 = Buffer.from(response.data, 'binary').toString('base64');
     const contentType = response.headers['content-type'] || 'image/jpeg';
     return `data:${contentType};base64,${base64}`;
@@ -197,7 +200,7 @@ async function getItemImageBase64(
 }
 
 export function inv(ctx: Context, config: any) {
-  const axiosWithProxy = createAxiosInstance(config);
+  const axiosWithProxy = createAxiosInstance(config, ctx);
 
   const umamiD = umami;
   ctx.command('cs-inv [targetUser:text]', '查看CS背包', { authority: 0 })
@@ -283,7 +286,10 @@ export function inv(ctx: Context, config: any) {
       async function fetchFromOfficialApi(): Promise<{ avatarfull: string; personaname: string; lastlogoff?: number } | null> {
         if (!config.officialSteamApiKey) return null;
         try {
-          const officialRes = await axiosWithProxy.get(officialApiUrl);
+          const officialRes = await requestWithRetry(
+            () => axiosWithProxy.get(officialApiUrl),
+            { label: 'Steam官方API', ctx }
+          );
           const players = officialRes?.data?.response?.players;
           if (players && players.length > 0) {
             const player = players[0];
@@ -303,7 +309,10 @@ export function inv(ctx: Context, config: any) {
       async function fetchFromSteamWebApi(): Promise<{ avatarfull: string; personaname: string; lastlogoff?: number } | null> {
         if (!config.steamWebApiKey) return null;
         try {
-          const userRes = await axiosWithProxy.get(steamWebApiUrl);
+          const userRes = await requestWithRetry(
+            () => axiosWithProxy.get(steamWebApiUrl),
+            { label: 'steamwebapi.com', ctx }
+          );
           const playerData = userRes?.data;
           return {
             avatarfull: playerData?.avatarfull || playerData?.player?.avatarfull || '',
@@ -367,7 +376,10 @@ export function inv(ctx: Context, config: any) {
         const playerLastLogoff = playerInfo.lastlogoff;
         const playerLastLogoffTimeStr = playerLastLogoff ? (new Date(playerLastLogoff * 1000)).toLocaleString() : '未知';
 
-        const invRes = await axiosWithProxy.get(invUrl);
+        const invRes = await requestWithRetry(
+          () => axiosWithProxy.get(invUrl),
+          { label: 'Steam库存数据', ctx }
+        );
         const invData = invRes.data;
         logTiming('获取库存数据');
 
