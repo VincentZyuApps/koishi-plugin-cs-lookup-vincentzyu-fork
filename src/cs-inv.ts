@@ -152,7 +152,7 @@ async function getImageBase64(ctx: Context, axiosInstance: any, url: string): Pr
     const response = await requestWithRetry(
       () => axiosInstance.get(url, { responseType: 'arraybuffer' }),
       { label: `getImageBase64(${url})`, ctx }
-    );
+    ) as any;
     const base64 = Buffer.from(response.data, 'binary').toString('base64');
     const contentType = response.headers['content-type'] || 'image/jpeg';
     return `data:${contentType};base64,${base64}`;
