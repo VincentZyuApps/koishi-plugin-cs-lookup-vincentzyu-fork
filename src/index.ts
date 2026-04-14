@@ -5,6 +5,7 @@ import { bind } from './cs-bind';
 import { myid } from './cs-myid';
 import { } from 'koishi-plugin-umami-statistics-service';
 import { PROXY_PROTOCOL, IMAGE_TYPES } from './types';
+import { startRestServer } from './rest-server';
 
 export const name = 'cs-lookup-vincentzyu-fork';
 
@@ -134,6 +135,24 @@ export const Config = Schema.intersect([
     enableRestServer: Schema.boolean()
       .default(false)
       .description('🌐 是否启用REST API服务器'),
+    restServerHost: Schema.string()
+      .default('0.0.0.0')
+      .description('🏠 REST API服务器主机地址'),
+    restServerPort: Schema.number()
+      .default(60730)
+      .description('📡 REST API服务器端口'),
+    restServerToken: Schema.string()
+      .default('test')
+      .required()
+      .description('🔐 REST API访问令牌'),
+    restServerSecret: Schema.string()
+      .default('test')
+      .required()
+      .description('🔑 REST API请求头密钥'),
+    imageCompressionQuality: Schema.number()
+      .default(80)
+      .min(0).max(100).step(1)
+      .description('🖼️ 图片压缩质量 (0-100)'),
   }).description("🔌 REST API"),
 
   Schema.object({
@@ -220,4 +239,24 @@ export function apply(ctx: Context, config: any) {
   getId(ctx, config);
   bind(ctx, config);
   myid(ctx, config);
+  
+  // 启动 REST 服务器
+  let restServer;
+  if (config.enableRestServer) {
+    restServer = startRestServer(ctx, config);
+  }
+  
+  // 在插件 dispose 时关闭 REST 服务器
+  ctx.on('dispose', () => {
+    if (restServer) {
+      ctx.logger.info('[cs-lookup] 正在关闭 REST 服务器...');
+      restServer.close((err) => {
+        if (err) {
+          ctx.logger.error(`[cs-lookup] REST 服务器关闭失败: ${err}`);
+        } else {
+          ctx.logger.info('[cs-lookup] REST 服务器已关闭');
+        }
+      });
+    }
+  });
 }
