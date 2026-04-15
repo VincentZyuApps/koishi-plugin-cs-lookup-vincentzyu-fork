@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-cs-lookup-vincentzyu-fork",
   "description": "CS2/CS:GO Steam 库存查询与可视化展示，支持 SteamID 绑定/查询、官方与第三方 API 双通道、代理、图片缓存及丰富的渲染自定义选项",
-  "version": "1.2.0-beta.1+20260414",
+  "version": "1.2.0-beta.2+20260415",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/itzdrli/koishi-plugin-cs-lookup.git"

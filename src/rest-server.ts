@@ -52,6 +52,7 @@ export function startRestServer(ctx: Context, config: any) {
 
   // 处理 /cs-inv 接口
   fastify.get('/cs-inv', async (request, reply) => {
+    ctx.logger.info(`[cs-lookup] REST /cs-inv 收到请求: steamid=${(request.query as any).steamid} refresh=${(request.query as any).refresh} ip=${request.ip}`);
     try {
       const { steamid, refresh } = request.query as any;
 
