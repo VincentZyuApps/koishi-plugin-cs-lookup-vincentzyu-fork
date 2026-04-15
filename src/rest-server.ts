@@ -50,6 +50,19 @@ export function startRestServer(ctx: Context, config: any) {
     done();
   });
 
+  // 处理 /cs-bind/query 接口 - 查询用户绑定的 steamid
+  fastify.get('/cs-bind/query', async (request, reply) => {
+    const { platform, userid } = request.query as any;
+    if (!platform || !userid) {
+      return reply.status(400).send({ success: false, error: 'Missing platform or userid' });
+    }
+    const res = await ctx.database.get('cs_lookup', { userid, platform });
+    if (res.length) {
+      return { bound: true, steamid: res[0].steamId };
+    }
+    return { bound: false, steamid: null };
+  });
+
   // 处理 /cs-inv 接口
   fastify.get('/cs-inv', async (request, reply) => {
     ctx.logger.info(`[cs-lookup] REST /cs-inv 收到请求: steamid=${(request.query as any).steamid} refresh=${(request.query as any).refresh} ip=${request.ip}`);
