@@ -145,11 +145,11 @@ export const Config = Schema.intersect([
       .default(60730)
       .description('📡 REST API服务器端口'),
     restServerToken: Schema.string()
-      .default('test')
+      .default('请修改token')
       .required()
       .description('🔐 REST API访问令牌'),
     restServerSecret: Schema.string()
-      .default('test')
+      .default('请修改secret')
       .required()
       .description('🔑 REST API请求头密钥'),
     imageCompressionQuality: Schema.number()
