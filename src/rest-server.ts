@@ -15,11 +15,12 @@ function validateRequest(request: any, config: any): boolean {
 // 压缩图片
 async function compressImage(buffer: Buffer, quality: number): Promise<Buffer> {
   try {
-    return await sharp(buffer)
-      .jpeg({ quality })
-      .toBuffer();
+    const meta = await sharp(buffer).metadata();
+    if (meta.hasAlpha) {
+      return await sharp(buffer).png({ compressionLevel: 7 }).toBuffer();
+    }
+    return await sharp(buffer).jpeg({ quality }).toBuffer();
   } catch (error) {
-    // 压缩失败时返回原始图片
     return buffer;
   }
 }
@@ -258,10 +259,13 @@ export function startRestServer(ctx: Context, config: any) {
       );
 
       // 压缩图片
-      const compressedBuffer = await compressImage(Buffer.from(response.data), compressionQuality);
+      const rawBuffer = Buffer.from(response.data);
+      const meta = await sharp(rawBuffer).metadata();
+      const hasAlpha = !!meta.hasAlpha;
+      const compressedBuffer = await compressImage(rawBuffer, compressionQuality);
 
       // 返回图片
-      reply.header('Content-Type', 'image/jpeg');
+      reply.header('Content-Type', hasAlpha ? 'image/png' : 'image/jpeg');
       reply.header('Cache-Control', 'public, max-age=86400'); // 缓存1天
       return compressedBuffer;
 
