@@ -19,6 +19,9 @@ export const Config = Schema.intersect([
     data_collect: Schema.boolean()
       .default(true)
       .description('📊 是否允许匿名数据收集 隐私政策见上方链接'),
+    enableInvDbCache: Schema.boolean()
+      .default(false)
+      .description('💾 cs-inv 指令是否默认使用数据库缓存库存数据（true=有缓存直接用，false=每次实时拉取）'),
     preferOfficialSteamApi: Schema.boolean()
       .default(true)
       .description('🎮 是否优先使用 Steam 官方 API（官方免费但大陆可能访问不稳定，关闭则优先使用付费 steamwebapi.com）'),
@@ -218,6 +221,7 @@ export const usage = `
 declare module 'koishi' {
   interface Tables {
     cs_lookup: CsLookup
+    cs_inv_cache: CsInvCache
   }
 }
 
@@ -228,6 +232,12 @@ export interface CsLookup {
   platform: string
 }
 
+export interface CsInvCache {
+  steamid: string
+  inv_json: string
+  cached_at: number
+}
+
 export function apply(ctx: Context, config: any) {
   ctx.model.extend('cs_lookup', {
     id: 'string',
@@ -235,6 +245,11 @@ export function apply(ctx: Context, config: any) {
     userid: 'string',
     platform: 'string'
   }, {})
+  ctx.model.extend('cs_inv_cache', {
+    steamid: 'string',
+    inv_json: 'string',
+    cached_at: 'integer',
+  }, { primary: 'steamid' })
   inv(ctx, config);
   getId(ctx, config);
   bind(ctx, config);

@@ -205,6 +205,8 @@ export function inv(ctx: Context, config: any) {
   const umamiD = umami;
   ctx.command('cs-inv [targetUser:text]', '查看CS背包', { authority: 0 })
     .option('steamid', '-s, --steamid <steamid:string> 直接指定steam的id')
+    .option('refresh', '--refresh 强制刷新缓存并重新拉取')
+    .option('noRefresh', '--no-refresh 强制使用缓存（如有）')
     .action(async ({ session, options }, targetUser) => {
       // ========== 时间统计 ==========
       const timingEnabled = config.verboseConsoleLog;
@@ -219,6 +221,11 @@ export function inv(ctx: Context, config: any) {
         }
       };
       // ==============================
+
+      if (options.refresh && options.noRefresh) {
+        return '❌ --refresh 和 --no-refresh 不能同时使用';
+      }
+      const useCache = options.noRefresh ? true : options.refresh ? false : config.enableInvDbCache;
 
       if (config.data_collect) {
         ctx.umamiStatisticsService.send({
@@ -269,7 +276,7 @@ export function inv(ctx: Context, config: any) {
 
       ctx.logger.info(`STEAMID = ${STEAMID}, USERID = ${USERID}`);
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
-      const waitMsgId = await session.send(`${replyPrefix}正在获取steam库存... \n\t steamId = ${STEAMID}\n\t 渲染图片中....`);
+      const waitMsgId = await session.send(`${replyPrefix}正在获取steam库存... \n\t steamId = ${STEAMID}\n\t 渲染图片中....\n\t 提示: --refresh 强制刷新缓存，--no-refresh 强制使用缓存`);
 
       if (!isOnlyDigits(STEAMID)) {
         return `${replyPrefix}无效steamID, 若不知道steamID请使用指令 \`getid Steam个人资料页链接\` 获取`;
@@ -376,11 +383,26 @@ export function inv(ctx: Context, config: any) {
         const playerLastLogoff = playerInfo.lastlogoff;
         const playerLastLogoffTimeStr = playerLastLogoff ? (new Date(playerLastLogoff * 1000)).toLocaleString() : '未知';
 
-        const invRes = await requestWithRetry(
-          () => axiosWithProxy.get(invUrl),
-          { label: 'Steam库存数据', ctx }
-        );
-        const invData = invRes.data;
+        let invData: any;
+        let usedCache = false;
+        if (useCache) {
+          const cached = await ctx.database.get('cs_inv_cache', { steamid: STEAMID });
+          if (cached.length) {
+            invData = JSON.parse(cached[0].inv_json);
+            usedCache = true;
+            ctx.logger.info(`[cs-lookup] 使用数据库缓存库存数据: ${STEAMID}`);
+          }
+        }
+        if (!usedCache) {
+          const invRes = await requestWithRetry(
+            () => axiosWithProxy.get(invUrl),
+            { label: 'Steam库存数据', ctx }
+          );
+          invData = invRes.data;
+          if (useCache || options.refresh) {
+            await ctx.database.upsert('cs_inv_cache', [{ steamid: STEAMID, inv_json: JSON.stringify(invData), cached_at: Date.now() }]);
+          }
+        }
         logTiming('获取库存数据');
 
         ctx.logger.info(`[debug] invData = ${JSON.stringify(invData).slice(0, 1000)}[end]`);

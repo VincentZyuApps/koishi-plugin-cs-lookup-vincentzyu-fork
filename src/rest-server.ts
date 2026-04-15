@@ -53,7 +53,7 @@ export function startRestServer(ctx: Context, config: any) {
   // 处理 /cs-inv 接口
   fastify.get('/cs-inv', async (request, reply) => {
     try {
-      const { steamid } = request.query as any;
+      const { steamid, refresh } = request.query as any;
 
       if (!steamid) {
         return reply.status(400).send({
@@ -159,14 +159,30 @@ export function startRestServer(ctx: Context, config: any) {
       const playerInfo = await fetchPlayerInfo();
       ctx.logger.info(`[cs-lookup] 玩家信息获取成功: ${playerInfo.personaname}`);
       
-      // 获取库存数据
-      ctx.logger.info(`[cs-lookup] 开始获取库存数据...`);
-      const invRes = await requestWithRetry(
-        () => axiosWithProxy.get(invUrl),
-        { label: 'Steam库存数据', ctx }
-      );
-      ctx.logger.info(`[cs-lookup] 库存数据获取成功，物品数量: ${invRes.data.total_inventory_count || 0}`);
-      const invData = invRes.data;
+      // 获取库存数据（支持缓存）
+      const useCache = config.enableInvDbCache && refresh !== 'true';
+      let invData: any;
+      let usedCache = false;
+      if (useCache) {
+        const cached = await ctx.database.get('cs_inv_cache', { steamid });
+        if (cached.length) {
+          invData = JSON.parse(cached[0].inv_json);
+          usedCache = true;
+          ctx.logger.info(`[cs-lookup] REST: 使用数据库缓存: ${steamid}`);
+        }
+      }
+      if (!usedCache) {
+        ctx.logger.info(`[cs-lookup] 开始获取库存数据...`);
+        const invRes = await requestWithRetry(
+          () => axiosWithProxy.get(invUrl),
+          { label: 'Steam库存数据', ctx }
+        );
+        invData = invRes.data;
+        ctx.logger.info(`[cs-lookup] 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`);
+        if (config.enableInvDbCache) {
+          await ctx.database.upsert('cs_inv_cache', [{ steamid, inv_json: JSON.stringify(invData), cached_at: Date.now() }]);
+        }
+      }
 
       // 包装返回数据
       const responseData = {
