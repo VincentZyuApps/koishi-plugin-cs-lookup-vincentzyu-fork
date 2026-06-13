@@ -1,6 +1,8 @@
 import { Context } from 'koishi'
 import * as fs from 'fs'
 import * as path from 'path'
+import { LOG_LEVELS } from '../types'
+import type { PuppeteerLifeCycleEvent } from 'puppeteer-core'
 
 const BASE_FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Microsoft YaHei", "PingFang SC", sans-serif'
 const CUSTOM_FONT_FAMILY = 'CSLookupCustomFont'
@@ -29,7 +31,7 @@ export function buildCustomFontConfig(ctx: Context, fontPath?: string | null): C
 
   const resolvedPath = path.isAbsolute(fontPath) ? fontPath : path.resolve(fontPath)
   if (!fs.existsSync(resolvedPath)) {
-    ctx.logger.warn(`[cs-lookup] 自定义字体文件不存在: ${resolvedPath}`)
+    ctx.logger.warn(`[src/template/pptr-render-cs-inv.ts] [warn] ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`)
     return null
   }
 
@@ -46,13 +48,13 @@ export function buildCustomFontConfig(ctx: Context, fontPath?: string | null): C
       font-style: normal;
     }`
 
-    ctx.logger.debug(`[cs-lookup] 成功加载自定义字体: ${resolvedPath}`)
+    ctx.logger.debug(`[src/template/pptr-render-cs-inv.ts] [debug] ✅ 🔤 成功加载自定义字体: ${resolvedPath}`)
     return {
       css,
       fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`
     }
   } catch (e) {
-    ctx.logger.warn(`[cs-lookup] 加载自定义字体失败: ${e}`)
+    ctx.logger.warn(`[src/template/pptr-render-cs-inv.ts] [warn] ❌ 🔤 加载自定义字体失败: ${e}`)
     return null
   }
 }
@@ -87,10 +89,10 @@ export interface RenderCsInvImageOptions {
   html: string
   imageType?: string
   imageQuality?: number
-  waitUntil?: string
+  waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[]
   viewportWidth: number
   viewportHeight: number
-  verboseConsoleLog?: boolean
+  logLevel?: string
 }
 
 export function generateHtml(options: GenerateHtmlOptions): string {
@@ -464,19 +466,19 @@ export async function renderCsInvImage(ctx: Context, options: RenderCsInvImageOp
     waitUntil = 'domcontentloaded',
     viewportWidth,
     viewportHeight,
-    verboseConsoleLog = false,
+    logLevel = 'info',
   } = options
 
   const page = await ctx.puppeteer.page()
 
-  if (verboseConsoleLog) {
-    ctx.logger.info('[debug] 正在设置页面内容...')
+  if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
+    ctx.logger.info('[src/template/pptr-render-cs-inv.ts] [debug] 📄 正在设置页面内容...')
   }
 
   await page.setContent(html, { waitUntil })
 
-  if (verboseConsoleLog) {
-    ctx.logger.info('[debug] 正在等待图片加载...')
+  if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
+    ctx.logger.info('[src/template/pptr-render-cs-inv.ts] [debug] ⏳ 🖼️ 正在等待图片加载...')
   }
 
   try {
@@ -485,7 +487,7 @@ export async function renderCsInvImage(ctx: Context, options: RenderCsInvImageOp
       return allImages.every(img => (img as HTMLImageElement).complete)
     }, { timeout: 15000 })
   } catch (err) {
-    ctx.logger.warn('[debug] 部分图片加载超时，将继续渲染')
+    ctx.logger.warn('[src/template/pptr-render-cs-inv.ts] [warn] ⏰ 部分图片加载超时，将继续渲染')
   }
 
   await page.setViewport({ width: viewportWidth, height: viewportHeight })
@@ -500,8 +502,8 @@ export async function renderCsInvImage(ctx: Context, options: RenderCsInvImageOp
     screenshotOptions.quality = imageQuality
   }
 
-  if (verboseConsoleLog) {
-    ctx.logger.info('[debug] 正在截取屏幕...')
+  if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
+    ctx.logger.info('[src/template/pptr-render-cs-inv.ts] [debug] 📸 正在截取屏幕...')
   }
 
   const image = await page.screenshot(screenshotOptions)

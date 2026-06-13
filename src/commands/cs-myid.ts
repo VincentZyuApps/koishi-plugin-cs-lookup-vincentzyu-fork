@@ -1,11 +1,13 @@
 import { Context, h } from 'koishi'
 
 export async function myid(ctx: Context, config: any) {
-  ctx.command(
-    config.csMyidCommandName,
-    '查询自己绑定的 SteamId',
-    { authority: 0 }
-  )
+  ctx
+    .command(
+      config.csMyidCommandName,
+      '🆔 查询自己绑定的 SteamId ✅ 快速查看绑定状态',
+      { authority: 0 }
+    )
+    .alias('cs-myid')
     .action(async ({ session }) => {
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : ''
       

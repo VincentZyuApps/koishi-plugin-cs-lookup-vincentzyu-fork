@@ -14,11 +14,10 @@ export const Config = ConfigSchema;
 
 export const umami: [string, string] = ["29272bd1-0f4c-4db8-ad22-bec20ee15810", "https://data.itzdrli.cc"];
 
-const inject = {
+export const inject = {
     required: ['puppeteer', 'database'],
     optional: ['umamiStatisticsService'],
 };
-
 
 declare module 'koishi' {
   interface Tables {
@@ -66,12 +65,12 @@ export function apply(ctx: Context, config: CsLookupConfig) {
   // 在插件 dispose 时关闭 REST 服务器
   ctx.on('dispose', () => {
     if (restServer) {
-      ctx.logger.info('[cs-lookup] 正在关闭 REST 服务器...');
+      ctx.logger.info('[src/index.ts] [info] 🛑 🌐 正在关闭 REST 服务器...');
       restServer.close((err) => {
         if (err) {
-          ctx.logger.error(`[cs-lookup] REST 服务器关闭失败: ${err}`);
+          ctx.logger.error(`[src/index.ts] [error] ❌ 🌐 REST 服务器关闭失败: ${err}`);
         } else {
-          ctx.logger.info('[cs-lookup] REST 服务器已关闭');
+          ctx.logger.info('[src/index.ts] [info] ✅ 🌐 REST 服务器已关闭');
         }
       });
     }

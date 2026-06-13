@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { HttpProxyAgent } from 'http-proxy-agent';
-import { PROXY_PROTOCOL } from './types';
+import { PROXY_PROTOCOL, LOG_LEVELS } from './types';
 
 // 可重试的瞬态网络错误码
 const RETRYABLE_ERROR_CODES = new Set([
@@ -30,9 +30,9 @@ function isRetryableError(e: any): boolean {
 function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: string) {
   instance.interceptors.request.use((reqConfig: any) => {
     reqConfig._startTime = Date.now();
-    ctx.logger.info(`[cs-lookup] 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
+    ctx.logger.info(`[src/proxy.ts] [debug] 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
     if (proxyInfo) {
-      ctx.logger.info(`[cs-lookup] 🔌 via proxy: ${proxyInfo}`);
+      ctx.logger.info(`[src/proxy.ts] [debug] 🔌 via proxy: ${proxyInfo}`);
     }
     return reqConfig;
   });
@@ -46,7 +46,7 @@ function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: st
             : JSON.stringify(response.data).length))
         : 0;
       ctx.logger.info(
-        `[cs-lookup] ✅ RESPONSE ${response.status} ${response.statusText} | ` +
+        `[src/proxy.ts] [debug] ✅ RESPONSE ${response.status} ${response.statusText} | ` +
         `${response.config.url} | ${elapsed}ms | ~${(dataLen / 1024).toFixed(1)}KB`
       );
       return response;
@@ -58,7 +58,7 @@ function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: st
       if (error.response?.status) info.push(`status=${error.response.status}`);
       if (error.message) info.push(`msg=${error.message}`);
       ctx.logger.error(
-        `[cs-lookup] ❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`
+        `[src/proxy.ts] [error] ❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`
       );
       return Promise.reject(error);
     }
@@ -66,7 +66,7 @@ function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: st
 }
 
 export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
-  const verbose = !!(config.verboseConsoleLog && ctx);
+  const verbose = !!(LOG_LEVELS[config.logLevel] >= LOG_LEVELS.debug && ctx);
 
   const headers: any = {
     'Accept': 'application/json'
@@ -82,8 +82,8 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
 
   if (!config.proxy?.enabled) {
     if (verbose) {
-      ctx.logger.info(`[cs-lookup] 🔌 代理未启用，使用直连模式`);
-      ctx.logger.info(`[cs-lookup] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+      ctx.logger.info(`[src/proxy.ts] [debug] 🔌 代理未启用，使用直连模式`);
+      ctx.logger.info(`[src/proxy.ts] [debug] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
     }
     const instance = axios.create({
       timeout: 15000,
@@ -97,8 +97,8 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
   const proxyUrl = `${protocol}://${host}:${port}`;
 
   if (verbose) {
-    ctx.logger.info(`[cs-lookup] 🔌 代理已启用: ${proxyUrl}`);
-    ctx.logger.info(`[cs-lookup] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+    ctx.logger.info(`[src/proxy.ts] [debug] 🔌 代理已启用: ${proxyUrl}`);
+    ctx.logger.info(`[src/proxy.ts] [debug] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
   }
 
   let agent;
@@ -116,7 +116,7 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
       break;
     default:
       if (verbose) {
-        ctx.logger.warn(`[cs-lookup] ⚠️ 未知代理协议: ${protocol}，不使用代理`);
+        ctx.logger.warn(`[src/proxy.ts] [warn] ⚠️ 未知代理协议: ${protocol}，不使用代理`);
       } else {
         console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
       }
@@ -157,12 +157,12 @@ export async function requestWithRetry<T>(
       const delay = 1000 * (attempt + 1);
       if (ctx) {
         ctx.logger.warn(
-          `[cs-lookup] 🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
+          `[src/proxy.ts] [warn] 🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
           `${delay}ms 后重试 (剩余 ${maxRetries - attempt - 1} 次)...`
         );
       }
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  throw new Error(`[cs-lookup] ${label} 超过最大重试次数`);
+  throw new Error(`[src/proxy.ts] ${label} 超过最大重试次数`);
 }

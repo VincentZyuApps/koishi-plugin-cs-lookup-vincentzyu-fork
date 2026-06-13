@@ -1,62 +1,136 @@
 import { Schema } from 'koishi'
-import { IMAGE_TYPES, PROXY_PROTOCOL } from './types'
+import { IMAGE_TYPES, PROXY_PROTOCOL, LOG_LEVELS, type LogLevel } from './types'
 
 export interface Config {
+  // ==================================================================
+  // ===== 🛡️ 隐私与统计 =====
+  // ==================================================================
+  /** 是否允许匿名数据收集 */
   data_collect: boolean
-  
+
+  // ==================================================================
+  // ===== ⚙️ 基础设置 =====
+  // ==================================================================
+  /** 是否默认使用数据库缓存库存数据 */
   enableInvDbCache: boolean
+  /** 优先使用 Steam 官方 API（关闭则优先使用 steamwebapi.com） */
   preferOfficialSteamApi: boolean
+  /** Steam 官方免费 API Key */
   officialSteamApiKey?: string
+  /** steamwebapi.com 付费 API Key */
   steamWebApiKey?: string
 
+  // ==================================================================
+  // ===== 📝 指令名设置 =====
+  // ==================================================================
+  /** 查询库存指令名称 */
   csInvCommandName: string
+  /** 绑定 SteamID 指令名称 */
   csBindCommandName: string
+  /** 查询已绑定 SteamID 指令名称 */
   csMyidCommandName: string
+  /** 解析 SteamID 指令名称 */
   getidCommandName: string
+
+  // ==================================================================
+  // ===== 📨 通用消息设置 =====
+  // ==================================================================
+  /** 是否引用回复用户触发的消息 */
   replyToUser: boolean
 
+  // ==================================================================
+  // ===== 🎨 渲染设置（puppeteer 截图） =====
+  // ==================================================================
+  /** 使用深色主题 */
   enableDarkTheme: boolean
+  /** 背景贴上用户头像（磨砂玻璃效果） */
   enableAvatarBackground: boolean
+  /** 缓存饰品图片到磁盘 */
   enableImageCache: boolean
+  /** 库存物品列数 (2-10) */
   gridColumns: number
+  /** 渲染图片输出格式 */
   imageType: string
+  /** 截图质量 (0-100)，对 PNG 无效 */
   imageQuality: number
+  /** 页面加载等待策略 */
   waitUntil: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2'
+  /** 是否显示饰品总数量 */
   showItemCount: boolean
+  /** 饰品数量显示角标位置 */
   itemCountCorner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  /** 饰品名称显示位置 */
   itemNamePosition: 'top' | 'center' | 'bottom'
+  /** 饰品名称底纹透明度 (0-1) */
   itemNameBgOpacity: number
+  /** 饰品图片缩放比例 (50-300%) */
   itemImageScale: number
+  /** 自定义字体文件绝对路径 */
   customFontPath: string
+  /** 卡片底部自定义文字 */
   footerCustomText: string
+  /** 是否启用水印 */
   watermarkEnabled: boolean
+  /** 水印文字内容 */
   watermarkText: string
+  /** 水印字体大小 (px) */
   watermarkFontSize: number
+  /** 水印倾斜角度 (0-360) */
   watermarkAngle: number
+  /** 水印不透明度 (0-1) */
   watermarkOpacity: number
+  /** 水印行间距 (px) */
   watermarkRowGap: number
+  /** 水印列间距 (px) */
   watermarkColGap: number
 
+  // ==================================================================
+  // ===== 🌐 REST API 设置 =====
+  // ==================================================================
+  /** 是否启用内置 REST API 服务器 */
   enableRestServer: boolean
+  /** REST API 监听地址 */
   restServerHost: string
+  /** REST API 监听端口 */
   restServerPort: number
+  /** REST API 访问令牌 */
   restServerToken: string
+  /** REST API 请求头密钥 */
   restServerSecret: string
+  /** REST API 图片压缩质量 (0-100) */
   imageCompressionQuality: number
 
+  // ==================================================================
+  // ===== 🔌 代理配置 =====
+  // ==================================================================
+  /** 代理地址填写示例（仅参考，不生效） */
   __exampleProxyAddr__: string
+  /** 代理设置 */
   proxy: {
+    /** 是否启用代理 */
     enabled: boolean
+    /** 代理协议 */
     protocol: string
+    /** 代理地址 */
     host: string
+    /** 代理端口 */
     port: number
   }
+  /** 是否使用自定义 User-Agent */
   useUserAgent: boolean
+  /** 自定义 User-Agent 字符串 */
   userAgent?: string
+  /** 是否使用自定义 Cookie */
   useCookie: boolean
+  /** 自定义 Cookie 字符串 */
   cookie?: string
 
-  verboseConsoleLog: boolean
+  // ==================================================================
+  // ===== 🐛 Debug 设置 =====
+  // ==================================================================
+  /** 🔊 日志级别 */
+  logLevel: LogLevel
+  /** 库存 JSON 输出到文件 */
   verboseFileLog: boolean
 }
 
@@ -82,17 +156,20 @@ export const Config: Schema<Config> = Schema.intersect([
 
   Schema.object({
     csInvCommandName: Schema.string()
-      .default('cs-inv')
-      .description('🎒 查询库存指令名称'),
+      .default('查cs库存')
+      .description('🎒 cs-inv的指令名称'),
     csBindCommandName: Schema.string()
-      .default('cs-bind')
-      .description('🔗 绑定 SteamID 指令名称'),
+      .default('绑定steamid')
+      .description('🔗 cs-bind的指令名称'),
     csMyidCommandName: Schema.string()
-      .default('cs-myid')
-      .description('🆔 查询已绑定 SteamID 指令名称'),
+      .default('查询我绑定的steamid')
+      .description('🆔 cs-myid 的指令名称'),
     getidCommandName: Schema.string()
-      .default('getid')
-      .description('🔍 解析 SteamID 指令名称'),
+      .default('获取steamid')
+      .description('🔍 getid 的指令名称'),
+  }).description('📝 指令名设置'),
+
+  Schema.object({
     replyToUser: Schema.boolean()
       .default(true)
       .description('💬 是否引用用户触发的消息（响应主动指令的时候 回复用户）'),
@@ -156,9 +233,9 @@ export const Config: Schema<Config> = Schema.intersect([
       .min(0).max(1).step(0.05)
       .description('🌫️ 饰品名称底纹透明度 (0-1)'),
     itemImageScale: Schema.number()
-      .default(222)
+      .default(180)
       .min(50).max(300).step(1)
-      .description('🖼️ 饰品图片大小 (50-300%，默认222%)'),
+      .description('🖼️ 饰品图片大小缩放百分比 (50-300%，默认180%)'),
     customFontPath: Schema.string()
       .role('textarea', { rows: [2, 5] })
       .default('')
@@ -167,10 +244,10 @@ export const Config: Schema<Config> = Schema.intersect([
       .default('📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork')
       .description('📝 底部自定义文字'),
     watermarkEnabled: Schema.boolean()
-      .default(true)
+      .default(false)
       .description('💧 是否启用水印'),
     watermarkText: Schema.string()
-      .default('generated by koishi-plugin-cs-lookup-vincentzyu-fork')
+      .default('Generated by koishi-plugin-cs-lookup-vincentzyu-fork')
       .description('💧 水印文字'),
     watermarkFontSize: Schema.number()
       .default(16)
@@ -259,9 +336,13 @@ export const Config: Schema<Config> = Schema.intersect([
   }).description('🔌 代理配置'),
 
   Schema.object({
-    verboseConsoleLog: Schema.boolean()
-      .description('🔍 是否在控制台输出详细信息（包括：代理配置、所有网络请求的URL/耗时/大小、重试过程、缓存命中情况等）')
-      .default(false),
+    logLevel: Schema.union([
+      Schema.const('silent').description('🔇 Silent — 仅输出严重错误'),
+      Schema.const('error').description('❌ Error — 输出错误'),
+      Schema.const('warn').description('⚠️ Warn — 输出错误+警告'),
+      Schema.const('info').description('ℹ️ Info — 正常信息输出（默认）'),
+      Schema.const('debug').description('🐛 Debug — 输出全部调试信息'),
+    ]).role('radio').description('🔊 日志级别').default('info'),
     verboseFileLog: Schema.boolean()
       .description('📁 是否将库存数据完整JSON输出到文件 (../cache/inv_data/res.json)')
       .default(false)

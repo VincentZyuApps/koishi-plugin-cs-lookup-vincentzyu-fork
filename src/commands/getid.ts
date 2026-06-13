@@ -7,11 +7,13 @@ export function apply(ctx: Context, config: any) {
   const umamiD = umami
   const axiosWithProxy = createAxiosInstance(config, ctx)
   
-  ctx.command(
-    `${config.getidCommandName} <profLink:string>`,
-    '获取Steam ID. \n\t profLink的格式 比如: https://steamcommunity.com/id/VincentZyu/ \n\t 或者: https://steamcommunity.com/profiles/76561199321190157/',
-    { authority: 0 }
-  )
+  ctx
+    .command(
+      `${config.getidCommandName} <profLink:string>`,
+      '🔍 获取 Steam ID 📖 通过个人主页链接解析\n\t 🔗 格式: https://steamcommunity.com/id/xxx/ 或 /profiles/xxx/\n\t 🌐 网站推荐: https://steamid.io 也可以用主页 URL 查询 SteamID 等公开信息',
+      { authority: 0 }
+    )
+    .alias('get-steamid')
     .action(async ({ session }, profLink) => {
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : ''
       if (config.data_collect) {
@@ -56,7 +58,7 @@ export function apply(ctx: Context, config: any) {
         if (status === 402) {
           return `${replyPrefix}💸 steamwebapi.com 配额已用尽 (402)，请稍后再试或充值配额。`
         }
-        ctx.logger.error(`[cs-lookup] getid 请求失败: ${e.message}`)
+        ctx.logger.error(`[src/commands/getid.ts] [error] ❌ 🔍 请求失败: ${e.message}`)
         return `${replyPrefix}❌ 获取 Steam ID 失败: ${e.message}`
       }
     })

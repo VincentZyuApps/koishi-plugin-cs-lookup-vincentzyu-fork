@@ -49,6 +49,7 @@ export const usage = `
   <li><code>cs-bind &lt;steamId&gt; [userId]</code>：绑定 SteamID，支持艾特他人绑定</li>
   <li><code>cs-myid</code>：查看自己已绑定的 SteamID</li>
   <li><code>getid &lt;Steam个人资料链接&gt;</code>：从 Steam 主页链接解析 SteamID</li>
+  <li>💡 没有 Key 也可以使用 <a href="https://steamid.io" target="_blank">steamid.io</a> 免费查询 SteamID64</li>
 </ul>
 
 <h3>🔑 Key 使用建议</h3>

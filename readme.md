@@ -4,9 +4,15 @@
 [![npm-download](https://img.shields.io/npm/dm/koishi-plugin-cs-lookup-vincentzyu-fork?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-cs-lookup-vincentzyu-fork)
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/VincentZyu233/koishi-plugin-cs-lookup-vincentzyu-fork)
+[![Gitee](https://img.shields.io/badge/Gitee-C71D23?style=for-the-badge&logo=gitee&logoColor=white)](https://gitee.com/vincent-zyu/koishi-plugin-cs-lookup-vincentzyu-fork)
+
 [![Koishi Forum](https://img.shields.io/badge/forum.koishi.xyz-5546A3?style=for-the-badge&logo=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ff%2Ff3%2FKoishi.js_Logo.png&logoColor=white)](https://forum.koishi.xyz/t/topic/12558)
 
-基于上游 `koishi-plugin-cs-lookup` fork 的增强版插件，用于查询 CS2 / CS:GO Steam 库存并渲染图片，同时补充了 SteamID 绑定、缓存、代理、渲染自定义和 REST API 等能力。
+基于上游 [`koishi-plugin-cs-lookup`](https://github.com/itzdrli/koishi-plugin-cs-lookup) fork 的增强版插件，用于查询 CS2 / CS:GO Steam 库存并渲染图片，同时补充了 SteamID 绑定、缓存、代理、渲染自定义和 REST API 等能力。
+
+## 📸 效果预览
+
+![🎮 CS2 库存预览](docs/images/preview.png)
 
 ---
 
@@ -87,7 +93,7 @@
 | `itemCountCorner` | `"top-left"` / `"top-right"` / `"bottom-left"` / `"bottom-right"` | `"top-right"` | 📍 饰品数量显示角标位置 |
 | `itemNamePosition` | `"top"` / `"center"` / `"bottom"` | `"bottom"` | 📝 饰品名称显示位置 |
 | `itemNameBgOpacity` | number (0-1, step 0.05) | `0.6` | 🌫️ 饰品名称底纹透明度 |
-| `itemImageScale` | number (50-300) | `222` | 🖼️ 饰品图片缩放比例 (%) |
+| `itemImageScale` | number (50-300) | `180` | 🖼️ 饰品图片缩放比例 (%) |
 | `customFontPath` | string | `""` | 🔤 自定义字体文件绝对路径（留空使用默认） |
 | `footerCustomText` | string | `"📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork"` | 📝 卡片底部自定义文字 |
 | `watermarkEnabled` | boolean | `true` | 💧 是否启用水印 |
@@ -126,7 +132,7 @@
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `verboseConsoleLog` | boolean | `false` | 🔍 控制台输出详细信息（URL、耗时、重试、缓存命中等） |
+| `logLevel` | `"silent"` / `"error"` / `"warn"` / `"info"` / `"debug"` | `"info"` | 🔊 日志级别：debug 输出全部调试信息 |
 | `verboseFileLog` | boolean | `false` | 📁 库存完整 JSON 输出到 `../cache/inv_data/res.json` |
 
 ---
@@ -137,13 +143,13 @@
 
 查询 CS 库存并返回渲染图片。
 
-**选项：**
+**option选项：**
 
 | 选项 | 缩写 | 说明 |
 |------|------|------|
 | `--steamid` | `-s` | 直接指定 SteamID，不走绑定表 |
-| `--refresh` | | 强制刷新数据库中的库存缓存 |
-| `--no-refresh` | | 强制使用数据库缓存（如有） |
+| `--refresh` | `-r` | 强制刷新数据库中的库存缓存 |
+| `--no-refresh` | `-n` | 强制使用数据库缓存（如有） |
 
 **参数说明：**
 
@@ -183,6 +189,9 @@ cs-bind 7656119xxxxxxxxxx 123456789
 ### 🔍 `getid <Steam个人资料链接>
 
 通过 Steam 主页链接解析 SteamID。该指令依赖 `steamWebApiKey`。
+
+> 💡 **没有 API Key？** 也可以用 [steamid.io](https://steamid.io) 免费查询：  
+> 打开 `https://steamid.io` → 粘贴个人资料链接 → 直接获取 SteamID64
 
 **示例：**
 ```

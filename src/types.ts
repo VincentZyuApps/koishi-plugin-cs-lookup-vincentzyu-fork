@@ -13,3 +13,12 @@ export const IMAGE_TYPES = {
   WEBP: 'webp',
 } as const;
 export type ImageType = typeof IMAGE_TYPES[keyof typeof IMAGE_TYPES];
+
+export const LOG_LEVELS = {
+  silent: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
+} as const
+export type LogLevel = keyof typeof LOG_LEVELS
