@@ -7,6 +7,7 @@
 [![Gitee](https://img.shields.io/badge/Gitee-C71D23?style=for-the-badge&logo=gitee&logoColor=white)](https://gitee.com/vincent-zyu/koishi-plugin-cs-lookup-vincentzyu-fork)
 
 [![Koishi Forum](https://img.shields.io/badge/forum.koishi.xyz-5546A3?style=for-the-badge&logo=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ff%2Ff3%2FKoishi.js_Logo.png&logoColor=white)](https://forum.koishi.xyz/t/topic/12558)
+[![QQ群](https://img.shields.io/badge/QQ群-1085190201-12B7F5?style=flat-square&logo=qq&logoColor=white)](https://qm.qq.com/q/4vjto4V7Di)
 
 基于上游 [`koishi-plugin-cs-lookup`](https://github.com/itzdrli/koishi-plugin-cs-lookup) fork 的增强版插件，用于查询 CS2 / CS:GO Steam 库存并渲染图片，同时补充了 SteamID 绑定、缓存、代理、渲染自定义和 REST API 等能力。
 

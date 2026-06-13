@@ -1,5 +1,22 @@
-                    GNU AFFERO GENERAL PUBLIC LICENSE
-                       Version 3, 19 November 2007
+koishi-plugin-cs-lookup-vincentzyu-fork — CS2/CS:GO Steam 库存查询插件
+
+Copyright (C) 2024-2026 VincentZyu233
+
+Upstream source:
+  https://github.com/itzdrli/koishi-plugin-cs-lookup
+
+This fork (modifications):
+  https://github.com/VincentZyu233/koishi-plugin-cs-lookup-vincentzyu-fork
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+---
+
+                     GNU AFFERO GENERAL PUBLIC LICENSE
+                        Version 3, 19 November 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
  Everyone is permitted to copy and distribute verbatim copies

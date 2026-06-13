@@ -1,9 +1,0 @@
-enableImmutableInstalls: false
-
-nodeLinker: node-modules
-
-npmAlwaysAuth: true
-
-npmAuthToken: "$npmToken"
-
-npmPublishRegistry: "https://registry.npmjs.org"
