@@ -35,20 +35,19 @@
 
 ### 2️⃣ 配置 Steam API Key
 
-推荐同时配置下面两个 Key：
-
 | Key | 来源 | 费用 | 用途 |
 |-----|------|------|------|
-| `officialSteamApiKey` | https://steamcommunity.com/dev/apikey | 免费 | 获取玩家信息（大陆网络可能不稳定） |
-| `steamWebApiKey` | https://www.steamwebapi.com | 付费 | 获取玩家信息 + **getid 指令必需** |
+| `officialSteamApiKey` | https://steamcommunity.com/dev/apikey | 免费 | **必需** — `cs-inv` 获取玩家信息 |
+| `steamWebApiKey` | https://www.steamwebapi.com | 付费 | **可选** — `getid` 自动解析链接用 |
 
-如果两个 Key 都配置了，插件会按 `preferOfficialSteamApi` 的设置选择主通道，并在失败时自动回退。
+> 💡 其实查 SteamID 是**一次性操作**，用 [steamid.io](https://steamid.io) 免费查一次就行，  
+> 不一定非要配 `steamWebApiKey`：打开 `https://steamid.io` → 粘贴个人资料链接 → 复制 SteamID64
 
 ### 3️⃣ 可选配置代理
 
-如果服务器访问 Steam 相关接口不稳定，建议在插件配置中启用代理，支持以下协议：
+如果服务器访问 Steam 相关接口不稳定，可以在插件配置中启用代理。
 
-`http` / `https` / `socks4` / `socks5` / `socks5h`
+理论上支持 `axios` 扩展支持的所有协议 — `http` / `https` / `socks4` / `socks5` / `socks5h`，不过我自己只测试了 `clash cli + socks5` 这种用法。
 
 ---
 
@@ -213,13 +212,22 @@ getid https://steamcommunity.com/profiles/76561199321190157/
 
 ---
 
-## 🔗 上游信息
+## 🔗 上游仓库的 README 部分信息
 
-- 上游仓库：https://github.com/itzdrli/koishi-plugin-cs-lookup
-- 本 fork 初始参考版本：`1.0.1`
+来自上游作者 [itzdrli](https://github.com/itzdrli) 的原始插件
+
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/itzdrli/koishi-plugin-cs-lookup)
+[![npm](https://img.shields.io/npm/v/koishi-plugin-cs-lookup?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-cs-lookup)
+[![Build Status](https://app.travis-ci.com/itzdrli/koishi-plugin-cs-lookup.svg?branch=master)](https://app.travis-ci.com/itzdrli/koishi-plugin-cs-lookup)
+[![ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/itzdrli)
+
+> 上游仓库：https://github.com/itzdrli/koishi-plugin-cs-lookup  
+> 本 fork 初始参考版本：`1.0.1`
 
 ---
 
 ## 📄 License
 
 AGPL-3.0
+
+> 上游 [itzdrli/koishi-plugin-cs-lookup](https://github.com/itzdrli/koishi-plugin-cs-lookup) 使用此许可证，本 fork 沿用同一许可证，尊重上游作者，符合开源社区规范。

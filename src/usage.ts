@@ -19,6 +19,19 @@ export const usage = `
   </a>
 </p>
 
+<p style="margin-top: 12px; padding: 10px; background: #f5f5f5; border-radius: 8px; text-align: center;">
+  🫡 上游原始插件 by <a href="https://github.com/itzdrli" target="_blank">itzdrli</a> ：
+  <a href="https://github.com/itzdrli/koishi-plugin-cs-lookup" target="_blank">
+    <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="Upstream GitHub">
+  </a>
+  <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup" target="_blank">
+    <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup?style=flat-square" alt="Upstream npm">
+  </a>
+  <a href="https://ko-fi.com/itzdrli" target="_blank">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi">
+  </a>
+</p>
+
 <h2 style="color: #ff4444; font-weight: 900; font-size: 24px; margin: 20px 0;">⚠️ 重要提示：需要开启 <b>puppeteer</b>、<b>database</b> 和 <b>umami-statistics-service</b> 插件，本插件才能完整工作。</h2>
 
 <p>📊 本插件支持匿名数据收集开关，默认关闭，来自上游插件。隐私协议见上方链接(不过貌似证书到期了)。</p>
