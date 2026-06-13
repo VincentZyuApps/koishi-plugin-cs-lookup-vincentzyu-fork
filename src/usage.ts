@@ -8,18 +8,23 @@ export const usage = `
   <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup-vincentzyu-fork" target="_blank">
     <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup-vincentzyu-fork?style=flat-square" alt="npm version">
   </a>
-  <a href="https://github.com/itzdrli/koishi-plugin-cs-lookup" target="_blank">
-    <img src="https://img.shields.io/badge/Upstream-GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Upstream GitHub">
+  <a href="https://github.com/VincentZyu233/koishi-plugin-cs-lookup-vincentzyu-fork" target="_blank">
+    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+  </a>
+  <a href="https://gitee.com/vincent-zyu/koishi-plugin-cs-lookup-vincentzyu-fork" target="_blank">
+    <img src="https://img.shields.io/badge/Gitee-C71D23?style=for-the-badge&logo=gitee&logoColor=white" alt="Gitee">
   </a>
   <a href="https://qm.qq.com/q/dM7v4bLJfh" target="_blank">
     <img src="https://img.shields.io/badge/QQ群-957500313-1AAD19?style=flat-square" alt="QQ群">
   </a>
-  <a href="https://legal.itzdrli.cc" target="_blank">
-    <img src="https://img.shields.io/badge/隐私政策-legal.itzdrli.cc-0A66C2?style=flat-square" alt="隐私政策">
+  <a href="https://forum.koishi.xyz/t/topic/12558" target="_blank">
+    <img src="https://img.shields.io/badge/Koishi%20Forum-12558-5546A3?style=for-the-badge&logo=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ff%2Ff3%2FKoishi.js_Logo.png&logoColor=white" alt="Forum">
   </a>
 </p>
 
-<p style="margin-top: 12px; padding: 10px; background: #f5f5f5; border-radius: 8px; text-align: center;">
+<p><a href="https://legal.itzdrli.cc" target="_blank">🔒 隐私政策</a></p>
+
+<p style="margin-top: 12px; text-align: center;">
   🫡 上游原始插件 by <a href="https://github.com/itzdrli" target="_blank">itzdrli</a> ：
   <a href="https://github.com/itzdrli/koishi-plugin-cs-lookup" target="_blank">
     <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="Upstream GitHub">
@@ -94,5 +99,4 @@ export const usage = `
 
 <h3>📜 许可说明</h3>
 <p>本仓库当前附带的许可证文件为 <b>GNU Affero General Public License v3.0（AGPL-3.0）</b>。</p>
-<p>⚠️ 目前仓库内的 <code>LICENSE</code> 文件与 <code>package.json</code> 中的 <code>license: MIT</code> 声明并不一致，建议后续统一整理。</p>
 `
