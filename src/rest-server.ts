@@ -57,7 +57,7 @@ export function startRestServer(ctx: Context, config: any) {
     if (!platform || !userid) {
       return reply.status(400).send({ success: false, error: 'Missing platform or userid' });
     }
-    const res = await ctx.database.get('cs_lookup', { userid, platform });
+    const res = await ctx.database.get('cs_lookup_vincentzyu_fork', { userid, platform });
     if (res.length) {
       return { bound: true, steamid: res[0].steamId };
     }
@@ -179,7 +179,7 @@ export function startRestServer(ctx: Context, config: any) {
       let invData: any;
       let usedCache = false;
       if (useCache) {
-        const cached = await ctx.database.get('cs_inv_cache', { steamid });
+        const cached = await ctx.database.get('cs_inv_cache_vincentzyu_fork', { steamid });
         if (cached.length) {
           invData = JSON.parse(cached[0].inv_json);
           usedCache = true;
@@ -195,7 +195,7 @@ export function startRestServer(ctx: Context, config: any) {
         invData = invRes.data;
         ctx.logger.info(`[cs-lookup] 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`);
         if (config.enableInvDbCache) {
-          await ctx.database.upsert('cs_inv_cache', [{ steamid, inv_json: JSON.stringify(invData), cached_at: Date.now() }]);
+          await ctx.database.upsert('cs_inv_cache_vincentzyu_fork', [{ steamid, inv_json: JSON.stringify(invData), cached_at: Date.now() }]);
         }
       }
 
