@@ -22,20 +22,25 @@ export const usage = `
   </a>
 </p>
 
-<p><a href="https://legal.itzdrli.cc" target="_blank">🔒 隐私政策</a></p>
-
-<p style="margin-top: 12px; text-align: center;">
-  🫡 上游原始插件 by <a href="https://github.com/itzdrli" target="_blank">itzdrli</a> ：
-  <a href="https://github.com/itzdrli/koishi-plugin-cs-lookup" target="_blank">
-    <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="Upstream GitHub">
-  </a>
-  <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup" target="_blank">
-    <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup?style=flat-square" alt="Upstream npm">
-  </a>
-  <a href="https://ko-fi.com/itzdrli" target="_blank">
-    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi">
-  </a>
-</p>
+<div style="margin-top: 12px; padding: 10px; border: 1px solid rgba(128, 128, 128, 0.25); border-radius: 8px;">
+  <div style="text-align: left; margin-bottom: 6px;">
+    🫡 上游原始插件的一些信息 by <a href="https://github.com/itzdrli" target="_blank">itzdrli</a>
+  </div>
+  <div style="text-align: center;">
+    <a href="https://github.com/itzdrli/koishi-plugin-cs-lookup" target="_blank">
+      <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="Upstream GitHub">
+    </a>
+    <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup" target="_blank">
+      <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup?style=flat-square" alt="Upstream npm">
+    </a>
+    <a href="https://ko-fi.com/itzdrli" target="_blank">
+      <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi">
+    </a>
+    <a href="https://legal.itzdrli.cc" target="_blank">
+      <img src="https://img.shields.io/badge/Privacy-legal.itzdrli.cc-0A66C2?style=flat-square" alt="隐私政策">
+    </a>
+  </div>
+</div>
 
 <h2 style="color: #ff4444; font-weight: 900; font-size: 24px; margin: 20px 0;">⚠️ 重要提示：需要开启 <b>puppeteer</b>、<b>database</b> 和 <b>umami-statistics-service</b> 插件，本插件才能完整工作。</h2>
 

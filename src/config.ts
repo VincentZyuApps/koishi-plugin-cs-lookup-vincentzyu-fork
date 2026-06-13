@@ -283,11 +283,11 @@ export const Config: Schema<Config> = Schema.intersect([
       .default(60730)
       .description('📡 REST API服务器端口'),
     restServerToken: Schema.string()
-      .default('请修改token')
+      .default('please-change-token')
       // .required()
       .description('🔐 REST API访问令牌'),
     restServerSecret: Schema.string()
-      .default('请修改secret')
+      .default('please-change-secret')
       // .required()
       .description('🔑 REST API请求头密钥'),
     imageCompressionQuality: Schema.number()
@@ -300,7 +300,7 @@ export const Config: Schema<Config> = Schema.intersect([
     __exampleProxyAddr__: Schema.string()
       .default('socks5h://192.168.31.233:7891')
       .disabled()
-      .description('🔎 代理地址填写示例（这里只是格式参考，不是实际生效配置项）<br>🧦 SOCKS5h：<code>socks5h://ip:port</code><br>🌐 HTTP：<code>http://ip:port</code><br>🔒 HTTPS：<code>https://ip:port</code><br><br>💡 目前我自己主要测试的是 <code>clash-cli + socks5</code> 这种用法~')
+      .description('🔎 代理地址填写示例（这里只是格式参考，不是实际生效配置项）<br>🧦 SOCKS5h：<code>socks5h://ip:port</code><br>🌐 HTTP：<code>http://ip:port</code><br>🔒 HTTPS：<code>https://ip:port</code><br>💡 目前我自己主要测试的是 <code>clash-cli + socks5</code> 这种用法~')
       .role('link'),
     proxy: Schema.object({
       enabled: Schema.boolean()

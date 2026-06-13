@@ -170,22 +170,24 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🎮 CS-LOOKUP REST API 测试</h1>
-    
-    <div class="form-group">
-      <label>Steam ID</label>
-      <input type="text" id="steamid" placeholder="输入 Steam ID (纯数字)">
+    <div class="container">
+      <h1>🎮 CS-LOOKUP REST API 测试</h1>
+
+      <div class="form-group">
+        <label>API 地址</label>
+        <input type="text" id="apiBase" value="http://127.0.0.1:60730" placeholder="http://127.0.0.1:60730">
+      </div>
+
+      <div class="form-group">
+        <label>Steam ID</label>
+        <input type="text" id="steamid" placeholder="输入 Steam ID (纯数字)">
     </div>
     
     <div class="form-group">
       <label>Token</label>
-      <input type="text" id="token" placeholder="输入访问令牌">
-    </div>
-    
-    <div class="form-group">
-      <label>Secret</label>
-      <input type="text" id="secret" placeholder="输入请求头密钥">
+      <input type="text" id="token" value="please-change-token" placeholder="please-change-token">
+...
+      <input type="text" id="secret" value="please-change-secret" placeholder="please-change-secret">
     </div>
     
     <button id="queryBtn" onclick="queryInventory()">查询库存</button>
@@ -208,8 +210,11 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:60730';
     
+    function getApiBase() {
+      return document.getElementById('apiBase').value.trim() || 'http://127.0.0.1:60730';
+    }
+
     async function queryInventory() {
       const steamid = document.getElementById('steamid').value.trim();
       const token = document.getElementById('token').value.trim();
@@ -233,7 +238,7 @@
       document.getElementById('result').classList.add('hidden');
       
       try {
-        const response = await fetch(`${API_BASE}/cs-inv?steamid=${steamid}&token=${encodeURIComponent(token)}`, {
+        const response = await fetch(`${getApiBase()}/cs-inv?steamid=${steamid}&token=${encodeURIComponent(token)}`, {
           headers: {
             'X-Secret': secret
           }
@@ -347,7 +352,7 @@
       // 加载玩家头像
       async function loadPlayerAvatar(avatarUrl, token, secret) {
         try {
-          const response = await fetch(`${API_BASE}/steam-player/image?url=${encodeURIComponent(avatarUrl)}&token=${encodeURIComponent(token)}`, {
+          const response = await fetch(`${getApiBase()}/steam-player/image?url=${encodeURIComponent(avatarUrl)}&token=${encodeURIComponent(token)}`, {
             headers: { 'X-Secret': secret }
           });
           
@@ -363,7 +368,7 @@
       // 加载物品图片
       async function loadItemImage(img, iconUrl, token, secret) {
         try {
-          const response = await fetch(`${API_BASE}/cs-inv/image?icon_url=${encodeURIComponent(iconUrl)}&token=${encodeURIComponent(token)}`, {
+          const response = await fetch(`${getApiBase()}/cs-inv/image?icon_url=${encodeURIComponent(iconUrl)}&token=${encodeURIComponent(token)}`, {
             headers: { 'X-Secret': secret }
           });
           
