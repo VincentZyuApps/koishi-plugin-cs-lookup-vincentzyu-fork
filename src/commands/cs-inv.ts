@@ -9,11 +9,7 @@ import {
   generateHtml,
   renderCsInvImage,
 } from '../template/pptr-render-cs-inv';
-import {
-  buildQueryMarkdown,
-  buildQueryKeyboard,
-  sendQQMarkdown,
-} from '../qq';
+import { replyWithMarkdownKeyboard } from '../qq';
 
 export function isOnlyDigits(str: string): boolean {
   return /^\d+$/.test(str);
@@ -22,25 +18,25 @@ export function isOnlyDigits(str: string): boolean {
 export const light = ['#81a1c1', '#2e3440', '#5e81ac']; // Changed font color to a dark gray
 export const dark = ['#2e3440', '#ffffff', '#434c5e'];
 
-// 缓存目录路径
-const CACHE_DIR = path.join(__dirname, '..', '..', 'cache', 'inv_image');
-const INV_DATA_DIR = path.join(__dirname, '..', '..', 'cache', 'inv_data');
-
 /**
  * 确保缓存目录存在
  */
-function ensureCacheDir(): void {
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+function ensureCacheDir(cacheDir: string): void {
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
   }
 }
 
 /**
  * 根据 classid 和 instanceid 生成缓存文件路径
  */
-function getCacheFilePath(classid: string, instanceid: string): string {
+function getCacheFilePath(
+  cacheDir: string,
+  classid: string,
+  instanceid: string,
+): string {
   return path.join(
-    CACHE_DIR,
+    cacheDir,
     `item_class_${classid}_instance_${instanceid}.b64`,
   );
 }
@@ -48,8 +44,12 @@ function getCacheFilePath(classid: string, instanceid: string): string {
 /**
  * 从缓存读取 Base64 图片
  */
-function readFromCache(classid: string, instanceid: string): string | null {
-  const filePath = getCacheFilePath(classid, instanceid);
+function readFromCache(
+  cacheDir: string,
+  classid: string,
+  instanceid: string,
+): string | null {
+  const filePath = getCacheFilePath(cacheDir, classid, instanceid);
   if (fs.existsSync(filePath)) {
     try {
       return fs.readFileSync(filePath, 'utf-8');
@@ -64,33 +64,34 @@ function readFromCache(classid: string, instanceid: string): string | null {
  * 写入缓存
  */
 function writeToCache(
+  cacheDir: string,
   classid: string,
   instanceid: string,
   base64Data: string,
 ): void {
   try {
-    const filePath = getCacheFilePath(classid, instanceid);
+    const filePath = getCacheFilePath(cacheDir, classid, instanceid);
     fs.writeFileSync(filePath, base64Data, 'utf-8');
   } catch (e) {
-    // 写入失败静默忽略
+    // ignore write errors silently when cache is unavailable
   }
 }
 
 /**
  * 确保 inv_data 目录存在
  */
-function ensureInvDataDir(): void {
-  if (!fs.existsSync(INV_DATA_DIR)) {
-    fs.mkdirSync(INV_DATA_DIR, { recursive: true });
+function ensureInvDataDir(invDataDir: string): void {
+  if (!fs.existsSync(invDataDir)) {
+    fs.mkdirSync(invDataDir, { recursive: true });
   }
 }
 
 /**
  * 将 invData 写入文件
  */
-function writeInvDataToFile(data: any): void {
-  ensureInvDataDir();
-  const filePath = path.join(INV_DATA_DIR, 'res.json');
+function writeInvDataToFile(invDataDir: string, data: any): void {
+  ensureInvDataDir(invDataDir);
+  const filePath = path.join(invDataDir, 'res.json');
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
@@ -131,18 +132,14 @@ async function getItemImageBase64(
   instanceid: string,
   enableCache: boolean,
   logLevel: string,
+  cacheDir: string,
 ): Promise<{ base64: string; fromCache: boolean }> {
   const imageUrl =
     'https://community.cloudflare.steamstatic.com/economy/image/' + iconUrl;
 
   if (enableCache) {
-    const cached = readFromCache(classid, instanceid);
+    const cached = readFromCache(cacheDir, classid, instanceid);
     if (cached) {
-      if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-        ctx.logger.info(
-          `[src/commands/cs-inv.ts] [debug] 📦 缓存命中: class_${classid}_instance_${instanceid}`,
-        );
-      }
       return { base64: cached, fromCache: true };
     }
   }
@@ -150,7 +147,7 @@ async function getItemImageBase64(
   const base64Data = await getImageBase64(ctx, axiosInstance, imageUrl);
 
   if (enableCache && base64Data.startsWith('data:')) {
-    writeToCache(classid, instanceid, base64Data);
+    writeToCache(cacheDir, classid, instanceid, base64Data);
   }
 
   return { base64: base64Data, fromCache: false };
@@ -158,6 +155,8 @@ async function getItemImageBase64(
 
 export function inv(ctx: Context, config: any) {
   const axiosWithProxy = createAxiosInstance(config, ctx);
+  const cacheImageDir = path.join(ctx.baseDir, ...config.csInvImageCachePath);
+  const cacheDataDir = path.join(ctx.baseDir, ...config.csInvDataCachePath);
 
   ctx
     .command(
@@ -241,7 +240,7 @@ export function inv(ctx: Context, config: any) {
       );
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
       const waitMsgId = await session.send(
-        `${replyPrefix}🔄 正在获取 Steam 库存 🖼️ 渲染图片中..... \n\t 🔍 查询 SteamId = ${STEAMID}\n 💡 提示: --refresh 刷新缓存 · --no-refresh 使用缓存 💾`,
+        `${replyPrefix}🔄 正在获取 Steam 库存 🖼️ 渲染图片中..... \n\t 🔍 查询 SteamId = ${STEAMID}`,
       );
 
       if (!isOnlyDigits(STEAMID)) {
@@ -423,9 +422,9 @@ export function inv(ctx: Context, config: any) {
 
         if (config.verboseFileLog) {
           try {
-            writeInvDataToFile(invData);
+            writeInvDataToFile(cacheDataDir, invData);
             ctx.logger.info(
-              `[src/commands/cs-inv.ts] [debug] 📝 已将库存数据写入: ${path.join(INV_DATA_DIR, 'res.json')}`,
+              `[src/commands/cs-inv.ts] [debug] 📝 已将库存数据写入: ${path.join(cacheDataDir, 'res.json')}`,
             );
           } catch (e) {
             ctx.logger.warn(
@@ -455,7 +454,7 @@ export function inv(ctx: Context, config: any) {
           );
 
           if (config.enableImageCache !== false) {
-            ensureCacheDir();
+            ensureCacheDir(cacheImageDir);
           }
 
           const itemMap = new Map<
@@ -479,6 +478,7 @@ export function inv(ctx: Context, config: any) {
                 instanceid,
                 config.enableImageCache !== false,
                 config.logLevel,
+                cacheImageDir,
               );
 
               if (result.fromCache) {
@@ -578,30 +578,14 @@ export function inv(ctx: Context, config: any) {
         await session.send(msg);
         logTiming('图片发送完成');
 
-        if (config.enableQQMarkdown) {
-          let steamidInDb = '';
-          try {
-            const row = await ctx.database.get('cs_lookup_vincentzyu_fork', {
-              userid: session.userId,
-              platform: session.platform,
-            });
-            if (row.length) steamidInDb = row[0].steamId;
-          } catch {}
-
-          const md = buildQueryMarkdown(STEAMID, playerPersonName);
-          const kb = buildQueryKeyboard(
-            {
-              csInvCommandName: config.csInvCommandName,
-              csBindCommandName: config.csBindCommandName,
-              csMyidCommandName: config.csMyidCommandName,
-              getidCommandName: config.getidCommandName,
-            },
-            session.userId,
-            steamidInDb,
-            config.qqMarkdownKeyboardJson,
-          );
-          await sendQQMarkdown(session, md, kb);
-        }
+        await replyWithMarkdownKeyboard(
+          session,
+          ctx,
+          config,
+          '',
+          '',
+          `# CS2 库存查询结果 ✨\n\n> Steam ID: ${STEAMID}\n> 用户名: ${playerPersonName}`,
+        );
 
         if (timingEnabled) {
           ctx.logger.info(

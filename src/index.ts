@@ -19,6 +19,7 @@ declare module 'koishi' {
   interface Tables {
     cs_lookup_vincentzyu_fork: CsLookup;
     cs_inv_cache_vincentzyu_fork: CsInvCache;
+    cs_getid_cache_vincentzyu_fork: CsGetidCache;
   }
 }
 
@@ -32,6 +33,13 @@ export interface CsLookup {
 export interface CsInvCache {
   steamid: string;
   inv_json: string;
+  cached_at: number;
+}
+
+export interface CsGetidCache {
+  url: string;
+  steamId: string;
+  personaName: string;
   cached_at: number;
 }
 
@@ -54,6 +62,16 @@ export function apply(ctx: Context, config: CsLookupConfig) {
       cached_at: 'integer',
     },
     { primary: 'steamid' },
+  );
+  ctx.model.extend(
+    'cs_getid_cache_vincentzyu_fork',
+    {
+      url: 'string',
+      steamId: 'string',
+      personaName: 'string',
+      cached_at: 'integer',
+    },
+    { primary: 'url' },
   );
   inv(ctx, config);
   getId(ctx, config);

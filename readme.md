@@ -13,7 +13,9 @@
 
 ## 📸 效果预览
 
-![🎮 CS2 库存预览](docs/images/preview.png)
+![🎮 CS2 库存渲染截图](docs/images/preview-pptr-render-cs-inv.ts.png)
+
+![💬 聊天界面效果 - OneBot QQ 平台](docs/images/preview-chat-platform-onebot-qq.png)
 
 ---
 

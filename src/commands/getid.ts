@@ -47,12 +47,49 @@ export function apply(ctx: Context, config: any) {
       }
 
       try {
-        const profUrl = `https://www.steamwebapi.com/steam/api/profile?key=${config.steamWebApiKey}&id=${profLink}`;
-        const response = await requestWithRetry(
-          () => axiosWithProxy.get(profUrl),
-          { label: 'getid-steamwebapi', ctx },
-        );
-        const data = response.data;
+        let data: any;
+
+        // 查缓存
+        if (config.enableGetidCache) {
+          const cached = await ctx.database.get(
+            'cs_getid_cache_vincentzyu_fork',
+            { url: profLink },
+          );
+          if (cached.length) {
+            const age = (Date.now() - cached[0].cached_at) / 86400000;
+            if (age < config.getidCacheDays) {
+              data = {
+                personaname: cached[0].personaName,
+                steamid: cached[0].steamId,
+              };
+              ctx.logger.info(
+                `[src/commands/getid.ts] [info] 💾 getid 缓存命中: ${profLink}`,
+              );
+            }
+          }
+        }
+
+        // 缓存未命中则调 API
+        if (!data) {
+          const profUrl = `https://www.steamwebapi.com/steam/api/profile?key=${config.steamWebApiKey}&id=${profLink}`;
+          const response = await requestWithRetry(
+            () => axiosWithProxy.get(profUrl),
+            { label: 'getid-steamwebapi', ctx },
+          );
+          data = response.data;
+
+          // 写入缓存
+          if (config.enableGetidCache) {
+            await ctx.database.upsert('cs_getid_cache_vincentzyu_fork', [
+              {
+                url: profLink,
+                steamId: data.steamid,
+                personaName: data.personaname,
+                cached_at: Date.now(),
+              },
+            ]);
+          }
+        }
 
         const result =
           `ℹ️ 用户名: ` + data.personaname + '\nSteam ID: ' + data.steamid;

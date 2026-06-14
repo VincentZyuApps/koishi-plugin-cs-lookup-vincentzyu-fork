@@ -19,6 +19,10 @@ export interface Config {
   officialSteamApiKey?: string;
   /** steamwebapi.com 付费 API Key */
   steamWebApiKey?: string;
+  /** 是否缓存 getid 查询结果到数据库 */
+  enableGetidCache: boolean;
+  /** getid 缓存有效天数 */
+  getidCacheDays: number;
 
   // ==================================================================
   // ===== 📝 指令名设置 =====
@@ -37,6 +41,8 @@ export interface Config {
   // ==================================================================
   /** 是否引用回复用户触发的消息 */
   replyToUser: boolean;
+  /** 💬 绑定替换时的 prompt 交互确认模式 */
+  promptMode: 'all' | 'none' | 'non-qq';
 
   // ==================================================================
   // ===== 🤖 QQ 官方 Bot 平台设置 =====
@@ -55,6 +61,10 @@ export interface Config {
   enableAvatarBackground: boolean;
   /** 缓存饰品图片到磁盘 */
   enableImageCache: boolean;
+  /** CS库存饰品图片Base64缓存路径 */
+  csInvImageCachePath: string[];
+  /** CS库存verboseFileLog输出路径 */
+  csInvDataCachePath: string[];
   /** 是否在图片消息后显示渲染耗时、图片格式、质量等信息 */
   puppeteerShowRenderInfo: boolean;
   /** 库存物品列数 (2-10) */
@@ -154,14 +164,27 @@ export const Config: Schema<Config> = Schema.intersect([
     preferOfficialSteamApi: Schema.boolean()
       .default(true)
       .description(
-        '🎮 是否优先使用 Steam 官方 API（官方免费但大陆可能访问不稳定，关闭则优先使用付费 steamwebapi.com）',
+        '🎮 是否优先使用 Steam 官方 API <br> <i>（官方免费但大陆可能访问不稳定，关闭则优先使用付费 steamwebapi.com）</i>',
       ),
-    officialSteamApiKey: Schema.string().description(
-      '🔑 Steam 官方 API Key（免费，从 steamcommunity.com/dev/apikey 获取）',
-    ),
-    steamWebApiKey: Schema.string().description(
-      '🔑 steamwebapi.com 的 API Key（付费，配额有限，作为官方 API 的回退/备用）',
-    ),
+    officialSteamApiKey: Schema.string()
+      .role('secret')
+      .description(
+        '🔑 steamcommunity.com/dev/apikey 的 API Key <br> <i>（免费，从Steam官方网站获取）</i>',
+      ),
+    steamWebApiKey: Schema.string()
+      .role('secret')
+      .description(
+        '🔑 steamwebapi.com 的 API Key <br> <i> （付费API，但是有免费配额，但是免费配额有限，作为官方 API 的回退/备用）</i>',
+      ),
+    enableGetidCache: Schema.boolean()
+      .default(true)
+      .description('💾 是否缓存 getid 查询结果到数据库 <br> <i> （减少 steamwebapi.com 的 API 调用次数. 建议保持打开，steamwebapi.com API的免费配额有限）</i>'),
+    getidCacheDays: Schema.number()
+      .default(30)
+      .min(1)
+      .max(365)
+      .step(1)
+      .description('📅 getid 缓存有效天数'),
   }).description('⚙️ 基础设置'),
 
   Schema.object({
@@ -183,6 +206,18 @@ export const Config: Schema<Config> = Schema.intersect([
     replyToUser: Schema.boolean()
       .default(true)
       .description('💬 是否引用用户触发的消息（响应主动指令的时候 回复用户）'),
+    promptMode: Schema.union([
+      Schema.const('all').description('🌐 所有平台都支持prompt交互确认'),
+      Schema.const('none').description('🚫 所有平台都禁用prompt交互确认'),
+      Schema.const('non-qq').description(
+        '💬 qq平台禁用prompt交互确认，其他平台正常确认（默认）',
+      ),
+    ])
+      .default('non-qq')
+      .role('radio')
+      .description(
+        '💬 cs-bind指令 绑定steamid替换时的 prompt 交互确认模式 <br> <i> ⚠️注意不影响arg传参，所有平台都支持arg传参 </i>',
+      ),
   }).description('📨 通用消息设置'),
 
   Schema.object({
@@ -209,6 +244,18 @@ export const Config: Schema<Config> = Schema.intersect([
     enableImageCache: Schema.boolean()
       .default(true)
       .description('💾 是否缓存饰品图片到磁盘（大幅提升重复查询速度）'),
+    csInvImageCachePath: Schema.array(String)
+      .role('table')
+      .default(['cache', 'cs_inv_image'])
+      .description(
+        '📂 饰品图片 Base64 缓存路径<br>依次填写相对于 Koishi 根目录的文件夹路径',
+      ),
+    csInvDataCachePath: Schema.array(String)
+      .role('table')
+      .default(['cache', 'cs_inv_data'])
+      .description(
+        '📂 库存 JSON verboseFileLog 输出路径<br>依次填写相对于 Koishi 根目录的文件夹路径',
+      ),
     puppeteerShowRenderInfo: Schema.boolean()
       .default(true)
       .description('📊 是否在图片消息后显示渲染耗时、图片格式、质量等信息'),

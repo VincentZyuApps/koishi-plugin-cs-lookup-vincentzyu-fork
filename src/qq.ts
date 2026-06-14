@@ -9,7 +9,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${csInvCommandName} -s ${steamidInDb}',
+            data: '${csInvCommandName} --help',
             enter: true,
           },
         },
@@ -18,7 +18,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${csBindCommandName} ${steamidInDb}',
+            data: '${csBindCommandName} --help',
             enter: true,
           },
         },
@@ -31,7 +31,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${csMyidCommandName}',
+            data: '${csMyidCommandName} --help',
             enter: true,
           },
         },
@@ -40,7 +40,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${getidCommandName}',
+            data: '${getidCommandName} --help',
             enter: true,
           },
         },
@@ -57,7 +57,6 @@ export function buildQueryKeyboard(
     getidCommandName: string;
   },
   userId: string,
-  steamidInDb: string,
   customJson?: string,
 ): object {
   let raw: string;
@@ -72,7 +71,6 @@ export function buildQueryKeyboard(
     raw = raw.replace(/\$\{csMyidCommandName\}/g, cmds.csMyidCommandName);
     raw = raw.replace(/\$\{getidCommandName\}/g, cmds.getidCommandName);
     raw = raw.replace(/\$\{userId\}/g, userId);
-    raw = raw.replace(/\$\{steamidInDb\}/g, steamidInDb);
     const parsed = JSON.parse(raw);
     if (parsed?.rows?.length) return parsed;
   } catch {}
@@ -147,6 +145,7 @@ export async function replyWithMarkdownKeyboard(
   },
   title: string,
   content: string,
+  customMarkdown?: string,
 ): Promise<string | void> {
   const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
 
@@ -154,21 +153,16 @@ export async function replyWithMarkdownKeyboard(
     config.enableQQMarkdown &&
     (session.platform === 'qq' || session.platform === 'qqguild')
   ) {
-    let steamidInDb = '';
-    try {
-      const row = await ctx.database.get('cs_lookup_vincentzyu_fork', {
-        userid: session.userId,
-        platform: session.platform,
-      });
-      if (row.length) steamidInDb = row[0].steamId;
-    } catch {}
-
     const md =
-      `# ${title}\n\n` +
-      content
-        .split('\n')
-        .map((l) => `> ${l}`)
-        .join('\n');
+      (customMarkdown ??
+        `# ${title}\n\n` +
+          content
+            .split('\n')
+            .map((l) => `> ${l}`)
+            .join('\n')) +
+      '\n\n---\n' +
+      `[不知道 Steam ID？点我获取 查steamid的网站url](mqqapi://aio/%69nlinecmd?command=https://steamid.io&enter=true)` +
+      '\n\n- ↓ 其他cs饰品查询插件的操作 ↓';
     const kb = buildQueryKeyboard(
       {
         csInvCommandName: config.csInvCommandName,
@@ -177,11 +171,10 @@ export async function replyWithMarkdownKeyboard(
         getidCommandName: config.getidCommandName,
       },
       session.userId,
-      steamidInDb,
       config.qqMarkdownKeyboardJson,
     );
     await sendQQMarkdown(session, md, kb);
-    return;
+    return '';
   }
 
   return `${replyPrefix}${content}`;

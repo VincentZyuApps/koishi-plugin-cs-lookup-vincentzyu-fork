@@ -60,33 +60,46 @@ export async function bind(ctx: Context, config: any) {
         platform: PLATFORM,
       });
       if (res.length) {
-        session.send(
-          `${replyPrefix}🔄 用户 ${userObj.name}(${USERID}-${PLATFORM}) 已绑定 SteamID ${STEAMID}\n\t 回复 ok 以进行替换，或者回复 cancel 取消替换`,
-        );
-        const response = await session.prompt();
-        if (response === 'cancel') {
-          const _r = await replyWithMarkdownKeyboard(
-            session,
-            ctx,
-            config,
-            '绑定steamid操作',
-            '⏹️ 已取消替换 SteamID',
+        const usePrompt =
+          config.promptMode === 'all' ||
+          (config.promptMode === 'non-qq' &&
+            session.platform !== 'qq' &&
+            session.platform !== 'qqguild');
+
+        if (usePrompt) {
+          session.send(
+            `${replyPrefix}🔄 用户 ${userObj.name}(${USERID}-${PLATFORM}) 已绑定 SteamID ${STEAMID}\n\t 回复 ok 以进行替换，或者回复 cancel 取消替换`,
           );
-          if (_r !== undefined) return _r;
-        } else if (response === 'ok') {
+          const response = await session.prompt();
+          if (response === 'cancel') {
+            const _r = await replyWithMarkdownKeyboard(
+              session,
+              ctx,
+              config,
+              '绑定steamid操作',
+              '⏹️ 已取消替换 SteamID',
+            );
+            if (_r !== undefined) return _r;
+          } else if (response === 'ok') {
+            await ctx.database.remove('cs_lookup_vincentzyu_fork', {
+              userid: USERID,
+              platform: PLATFORM,
+            });
+          } else {
+            const _r = await replyWithMarkdownKeyboard(
+              session,
+              ctx,
+              config,
+              '绑定steamid操作',
+              '❌ 无效回复, 已取消操作',
+            );
+            if (_r !== undefined) return _r;
+          }
+        } else {
           await ctx.database.remove('cs_lookup_vincentzyu_fork', {
             userid: USERID,
             platform: PLATFORM,
           });
-        } else {
-          const _r = await replyWithMarkdownKeyboard(
-            session,
-            ctx,
-            config,
-            '绑定steamid操作',
-            '❌ 无效回复, 已取消操作',
-          );
-          if (_r !== undefined) return _r;
         }
       }
 
