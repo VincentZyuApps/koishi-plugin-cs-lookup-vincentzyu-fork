@@ -1,4 +1,4 @@
-const pkg = require('../package.json')
+const pkg = require('../package.json');
 
 export const usage = `
 <h1>Koishi 插件：CS2 库存查询 cs-lookup-vincentzyu-fork</h1>
@@ -42,9 +42,7 @@ export const usage = `
   </div>
 </div>
 
-<h2 style="color: #ff4444; font-weight: 900; font-size: 24px; margin: 20px 0;">⚠️ 重要提示：需要开启 <b>puppeteer</b>、<b>database</b> 和 <b>umami-statistics-service</b> 插件，本插件才能完整工作。</h2>
-
-<p>📊 本插件支持匿名数据收集开关，默认关闭，来自上游插件。隐私协议见上方链接(不过貌似证书到期了)。</p>
+<h2 style="color: #ff4444; font-weight: 900; font-size: 24px; margin: 20px 0;">⚠️ 重要提示：需要开启 <b>puppeteer</b> 和 <b>database</b> 插件，本插件才能完整工作。</h2>
 
 <h2>💬 交流反馈</h2>
 <p>🐛 Bug 反馈 / 💡 建议 / 👨‍💻 插件开发交流，欢迎加群：</p>
@@ -104,4 +102,4 @@ export const usage = `
 
 <h3>📜 许可说明</h3>
 <p>本仓库当前附带的许可证文件为 <b>GNU Affero General Public License v3.0（AGPL-3.0）</b>。</p>
-`
+`;

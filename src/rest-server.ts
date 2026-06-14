@@ -9,7 +9,7 @@ import sharp from 'sharp';
 function validateRequest(request: any, config: any): boolean {
   const token = request.query.token;
   const secret = request.headers['x-secret'];
-  
+
   return token === config.restServerToken && secret === config.restServerSecret;
 }
 
@@ -28,14 +28,14 @@ async function compressImage(buffer: Buffer, quality: number): Promise<Buffer> {
 
 export function startRestServer(ctx: Context, config: any) {
   const fastify = Fastify({
-    logger: LOG_LEVELS[config.logLevel] >= LOG_LEVELS.info || false
+    logger: LOG_LEVELS[config.logLevel] >= LOG_LEVELS.info || false,
   });
 
   // 注册 CORS 中间件
   fastify.register(cors, {
     origin: true, // 允许所有来源
     methods: ['GET', 'POST'],
-    allowedHeaders: ['X-Secret', 'Content-Type']
+    allowedHeaders: ['X-Secret', 'Content-Type'],
   });
 
   const axiosWithProxy = createAxiosInstance(config, ctx);
@@ -45,7 +45,7 @@ export function startRestServer(ctx: Context, config: any) {
     if (!validateRequest(request, config)) {
       reply.status(401).header('Content-Type', 'application/json').send({
         success: false,
-        error: 'Unauthorized: Invalid token or secret'
+        error: 'Unauthorized: Invalid token or secret',
       });
       return;
     }
@@ -56,9 +56,14 @@ export function startRestServer(ctx: Context, config: any) {
   fastify.get('/cs-bind/query', async (request, reply) => {
     const { platform, userid } = request.query as any;
     if (!platform || !userid) {
-      return reply.status(400).send({ success: false, error: 'Missing platform or userid' });
+      return reply
+        .status(400)
+        .send({ success: false, error: 'Missing platform or userid' });
     }
-    const res = await ctx.database.get('cs_lookup_vincentzyu_fork', { userid, platform });
+    const res = await ctx.database.get('cs_lookup_vincentzyu_fork', {
+      userid,
+      platform,
+    });
     if (res.length) {
       return { bound: true, steamid: res[0].steamId };
     }
@@ -67,14 +72,16 @@ export function startRestServer(ctx: Context, config: any) {
 
   // 处理 /cs-inv 接口
   fastify.get('/cs-inv', async (request, reply) => {
-    ctx.logger.info(`[src/rest-server.ts] [info] 🌐 📥 REST /cs-inv 收到请求: steamid=${(request.query as any).steamid} refresh=${(request.query as any).refresh} ip=${request.ip}`);
+    ctx.logger.info(
+      `[src/rest-server.ts] [info] 🌐 📥 REST /cs-inv 收到请求: steamid=${(request.query as any).steamid} refresh=${(request.query as any).refresh} ip=${request.ip}`,
+    );
     try {
       const { steamid, refresh } = request.query as any;
 
       if (!steamid) {
         return reply.status(400).send({
           success: false,
-          error: 'Missing steamid parameter'
+          error: 'Missing steamid parameter',
         });
       }
 
@@ -82,7 +89,7 @@ export function startRestServer(ctx: Context, config: any) {
       if (!/^\d+$/.test(steamid)) {
         return reply.status(400).send({
           success: false,
-          error: 'Invalid steamid format'
+          error: 'Invalid steamid format',
         });
       }
 
@@ -97,7 +104,7 @@ export function startRestServer(ctx: Context, config: any) {
         try {
           const officialRes = await requestWithRetry(
             () => axiosWithProxy.get(officialApiUrl),
-            { label: 'Steam官方API', ctx }
+            { label: 'Steam官方API', ctx },
           );
           const players = officialRes?.data?.response?.players;
           if (players && players.length > 0) {
@@ -109,7 +116,9 @@ export function startRestServer(ctx: Context, config: any) {
             };
           }
         } catch (e) {
-          ctx.logger.warn(`[src/rest-server.ts] [warn] ❌ 🎮 官方 Steam API 请求失败: ${e.message}`);
+          ctx.logger.warn(
+            `[src/rest-server.ts] [warn] ❌ 🎮 官方 Steam API 请求失败: ${e.message}`,
+          );
         }
         return null;
       }
@@ -120,20 +129,29 @@ export function startRestServer(ctx: Context, config: any) {
         try {
           const userRes = await requestWithRetry(
             () => axiosWithProxy.get(steamWebApiUrl),
-            { label: 'steamwebapi.com', ctx }
+            { label: 'steamwebapi.com', ctx },
           );
           const playerData = userRes?.data;
           return {
-            avatarfull: playerData?.avatarfull || playerData?.player?.avatarfull || '',
-            personaname: playerData?.personaname || playerData?.player?.personaname || '未知用户',
-            lastlogoff: playerData?.lastlogoff || playerData?.player?.lastlogoff,
+            avatarfull:
+              playerData?.avatarfull || playerData?.player?.avatarfull || '',
+            personaname:
+              playerData?.personaname ||
+              playerData?.player?.personaname ||
+              '未知用户',
+            lastlogoff:
+              playerData?.lastlogoff || playerData?.player?.lastlogoff,
           };
         } catch (e) {
           const status = e.response?.status;
           if (status === 402) {
-            ctx.logger.warn(`[src/rest-server.ts] [warn] ⚠️ 💸 steamwebapi.com 配额已用尽 (402)`);
+            ctx.logger.warn(
+              `[src/rest-server.ts] [warn] ⚠️ 💸 steamwebapi.com 配额已用尽 (402)`,
+            );
           } else {
-            ctx.logger.warn(`[src/rest-server.ts] [warn] ❌ 🌐 steamwebapi.com 请求失败 (${status || e.message})`);
+            ctx.logger.warn(
+              `[src/rest-server.ts] [warn] ❌ 🌐 steamwebapi.com 请求失败 (${status || e.message})`,
+            );
           }
         }
         return null;
@@ -142,61 +160,87 @@ export function startRestServer(ctx: Context, config: any) {
       // 辅助函数：获取玩家信息（带回退逻辑，根据 preferOfficialSteamApi 决定优先级）
       async function fetchPlayerInfo() {
         const preferOfficial = config.preferOfficialSteamApi !== false; // 默认为 true
-        
+
         if (preferOfficial) {
           // 优先官方 API，steamwebapi.com 作为回退
-          ctx.logger.info(`[src/rest-server.ts] [info] 🎮 优先使用官方 Steam API...`);
+          ctx.logger.info(
+            `[src/rest-server.ts] [info] 🎮 优先使用官方 Steam API...`,
+          );
           let result = await fetchFromOfficialApi();
           if (result) return result;
-          
-          ctx.logger.info(`[src/rest-server.ts] [info] ⚠️ 🔀 官方 API 失败，回退到 steamwebapi.com...`);
+
+          ctx.logger.info(
+            `[src/rest-server.ts] [info] ⚠️ 🔀 官方 API 失败，回退到 steamwebapi.com...`,
+          );
           result = await fetchFromSteamWebApi();
           if (result) return result;
         } else {
           // 优先 steamwebapi.com，官方 API 作为回退
-          ctx.logger.info(`[src/rest-server.ts] [info] 🌐 优先使用 steamwebapi.com...`);
+          ctx.logger.info(
+            `[src/rest-server.ts] [info] 🌐 优先使用 steamwebapi.com...`,
+          );
           let result = await fetchFromSteamWebApi();
           if (result) return result;
-          
-          ctx.logger.info(`[src/rest-server.ts] [info] ⚠️ 🔀 steamwebapi.com 失败，回退到官方 Steam API...`);
+
+          ctx.logger.info(
+            `[src/rest-server.ts] [info] ⚠️ 🔀 steamwebapi.com 失败，回退到官方 Steam API...`,
+          );
           result = await fetchFromOfficialApi();
           if (result) return result;
         }
 
         // 两个 API 都失败
         if (!config.steamWebApiKey && !config.officialSteamApiKey) {
-          throw new Error('未配置任何 Steam API Key，请在插件设置中至少填写一个 Key。\n• officialSteamApiKey: 官方免费 (steamcommunity.com/dev/apikey)\n• steamWebApiKey: 付费 (steamwebapi.com)');
+          throw new Error(
+            '未配置任何 Steam API Key，请在插件设置中至少填写一个 Key。\n• officialSteamApiKey: 官方免费 (steamcommunity.com/dev/apikey)\n• steamWebApiKey: 付费 (steamwebapi.com)',
+          );
         }
-        throw new Error('所有 Steam API 请求都失败，可能是网络问题或配额用尽。');
+        throw new Error(
+          '所有 Steam API 请求都失败，可能是网络问题或配额用尽。',
+        );
       }
 
       // 获取玩家信息
       ctx.logger.info(`[src/rest-server.ts] [info] 👤 开始获取玩家信息...`);
       const playerInfo = await fetchPlayerInfo();
-      ctx.logger.info(`[src/rest-server.ts] [info] ✅ 👤 玩家信息获取成功: ${playerInfo.personaname}`);
-      
+      ctx.logger.info(
+        `[src/rest-server.ts] [info] ✅ 👤 玩家信息获取成功: ${playerInfo.personaname}`,
+      );
+
       // 获取库存数据（支持缓存）
       const useCache = config.enableInvDbCache && refresh !== 'true';
       let invData: any;
       let usedCache = false;
       if (useCache) {
-        const cached = await ctx.database.get('cs_inv_cache_vincentzyu_fork', { steamid });
+        const cached = await ctx.database.get('cs_inv_cache_vincentzyu_fork', {
+          steamid,
+        });
         if (cached.length) {
           invData = JSON.parse(cached[0].inv_json);
           usedCache = true;
-          ctx.logger.info(`[src/rest-server.ts] [info] 💾 ✅ REST: 使用数据库缓存: ${steamid}`);
+          ctx.logger.info(
+            `[src/rest-server.ts] [info] 💾 ✅ REST: 使用数据库缓存: ${steamid}`,
+          );
         }
       }
       if (!usedCache) {
         ctx.logger.info(`[src/rest-server.ts] [info] 📦 开始获取库存数据...`);
         const invRes = await requestWithRetry(
           () => axiosWithProxy.get(invUrl),
-          { label: 'Steam库存数据', ctx }
+          { label: 'Steam库存数据', ctx },
         );
         invData = invRes.data;
-        ctx.logger.info(`[src/rest-server.ts] [info] ✅ 📦 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`);
+        ctx.logger.info(
+          `[src/rest-server.ts] [info] ✅ 📦 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`,
+        );
         if (config.enableInvDbCache) {
-          await ctx.database.upsert('cs_inv_cache_vincentzyu_fork', [{ steamid, inv_json: JSON.stringify(invData), cached_at: Date.now() }]);
+          await ctx.database.upsert('cs_inv_cache_vincentzyu_fork', [
+            {
+              steamid,
+              inv_json: JSON.stringify(invData),
+              cached_at: Date.now(),
+            },
+          ]);
         }
       }
 
@@ -209,29 +253,32 @@ export function startRestServer(ctx: Context, config: any) {
           api: 'Steam Inventory API',
           player: {
             name: playerInfo.personaname,
-            avatar: playerInfo.avatarfull
-          }
+            avatar: playerInfo.avatarfull,
+          },
         },
-        data: invData
+        data: invData,
       };
-      
+
       ctx.logger.info(`[src/rest-server.ts] [info] ✅ 准备返回响应...`);
       return responseData;
-
     } catch (error) {
-      ctx.logger.error(`[src/rest-server.ts] [error] ❌ 💥 REST API 错误: ${error.stack || error}`);
+      ctx.logger.error(
+        `[src/rest-server.ts] [error] ❌ 💥 REST API 错误: ${error.stack || error}`,
+      );
       // 确保返回有效的 JSON 响应
       try {
         return reply.status(500).send({
           success: false,
-          error: error.message || 'Internal server error'
+          error: error.message || 'Internal server error',
         });
       } catch (replyError) {
-        ctx.logger.error(`[src/rest-server.ts] [error] ❌ 💥 响应错误: ${replyError.stack || replyError}`);
+        ctx.logger.error(
+          `[src/rest-server.ts] [error] ❌ 💥 响应错误: ${replyError.stack || replyError}`,
+        );
         // 作为最后的尝试，返回一个简单的错误响应
         return {
           success: false,
-          error: 'Internal server error'
+          error: 'Internal server error',
         };
       }
     }
@@ -245,36 +292,42 @@ export function startRestServer(ctx: Context, config: any) {
       if (!icon_url) {
         return reply.status(400).send({
           success: false,
-          error: 'Missing icon_url parameter'
+          error: 'Missing icon_url parameter',
         });
       }
 
       // 构建完整的饰品图片 URL
       const imageUrl = `https://community.cloudflare.steamstatic.com/economy/image/${icon_url}`;
-      const compressionQuality = quality ? parseInt(quality) : config.imageCompressionQuality || 80;
+      const compressionQuality = quality
+        ? parseInt(quality)
+        : config.imageCompressionQuality || 80;
 
       // 获取图片
       const response = await requestWithRetry(
         () => axiosWithProxy.get(imageUrl, { responseType: 'arraybuffer' }),
-        { label: `cs-inv-image(${icon_url})`, ctx }
+        { label: `cs-inv-image(${icon_url})`, ctx },
       );
 
       // 压缩图片
       const rawBuffer = Buffer.from(response.data);
       const meta = await sharp(rawBuffer).metadata();
       const hasAlpha = !!meta.hasAlpha;
-      const compressedBuffer = await compressImage(rawBuffer, compressionQuality);
+      const compressedBuffer = await compressImage(
+        rawBuffer,
+        compressionQuality,
+      );
 
       // 返回图片
       reply.header('Content-Type', hasAlpha ? 'image/png' : 'image/jpeg');
       reply.header('Cache-Control', 'public, max-age=86400'); // 缓存1天
       return compressedBuffer;
-
     } catch (error) {
-      ctx.logger.error(`[src/rest-server.ts] [error] ❌ 🖼️ REST API 图片代理错误: ${error.stack || error}`);
+      ctx.logger.error(
+        `[src/rest-server.ts] [error] ❌ 🖼️ REST API 图片代理错误: ${error.stack || error}`,
+      );
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Internal server error'
+        error: error.message || 'Internal server error',
       });
     }
   });
@@ -287,47 +340,60 @@ export function startRestServer(ctx: Context, config: any) {
       if (!url) {
         return reply.status(400).send({
           success: false,
-          error: 'Missing url parameter'
+          error: 'Missing url parameter',
         });
       }
 
-      const compressionQuality = quality ? parseInt(quality) : config.imageCompressionQuality || 80;
+      const compressionQuality = quality
+        ? parseInt(quality)
+        : config.imageCompressionQuality || 80;
 
       // 获取图片
       const response = await requestWithRetry(
         () => axiosWithProxy.get(url, { responseType: 'arraybuffer' }),
-        { label: `steam-player-image(${url})`, ctx }
+        { label: `steam-player-image(${url})`, ctx },
       );
 
       // 压缩图片
-      const compressedBuffer = await compressImage(Buffer.from(response.data), compressionQuality);
+      const compressedBuffer = await compressImage(
+        Buffer.from(response.data),
+        compressionQuality,
+      );
 
       // 返回图片
       reply.header('Content-Type', 'image/jpeg');
       reply.header('Cache-Control', 'public, max-age=86400'); // 缓存1天
       return compressedBuffer;
-
     } catch (error) {
-      ctx.logger.error(`[src/rest-server.ts] [error] ❌ 👤 REST API 玩家头像代理错误: ${error.stack || error}`);
+      ctx.logger.error(
+        `[src/rest-server.ts] [error] ❌ 👤 REST API 玩家头像代理错误: ${error.stack || error}`,
+      );
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Internal server error'
+        error: error.message || 'Internal server error',
       });
     }
   });
 
   // 启动服务器
-  fastify.listen({
-    host: config.restServerHost || '0.0.0.0',
-    port: config.restServerPort || 60730
-  }, (err, address) => {
-    if (err) {
-      ctx.logger.error(`[src/rest-server.ts] [error] ❌ 🌐 REST 服务器启动失败: ${err}`);
-      return;
-    }
-    ctx.logger.info(`[src/rest-server.ts] [info] ✅ 🌐 REST 服务器已启动: ${address}`);
-  });
-  
+  fastify.listen(
+    {
+      host: config.restServerHost || '0.0.0.0',
+      port: config.restServerPort || 60730,
+    },
+    (err, address) => {
+      if (err) {
+        ctx.logger.error(
+          `[src/rest-server.ts] [error] ❌ 🌐 REST 服务器启动失败: ${err}`,
+        );
+        return;
+      }
+      ctx.logger.info(
+        `[src/rest-server.ts] [info] ✅ 🌐 REST 服务器已启动: ${address}`,
+      );
+    },
+  );
+
   // 返回 Fastify 实例，以便在插件 dispose 时关闭
   return fastify;
 }

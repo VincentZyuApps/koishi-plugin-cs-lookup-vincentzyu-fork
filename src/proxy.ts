@@ -6,8 +6,14 @@ import { PROXY_PROTOCOL, LOG_LEVELS } from './types';
 
 // 可重试的瞬态网络错误码
 const RETRYABLE_ERROR_CODES = new Set([
-  'ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED', 'EPIPE',
-  'EAI_AGAIN', 'ENOTFOUND', 'ENETUNREACH', 'EHOSTUNREACH',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ECONNABORTED',
+  'EPIPE',
+  'EAI_AGAIN',
+  'ENOTFOUND',
+  'ENETUNREACH',
+  'EHOSTUNREACH',
 ]);
 
 // 可重试的错误消息关键词
@@ -21,16 +27,22 @@ const RETRYABLE_ERROR_MESSAGES = [
 function isRetryableError(e: any): boolean {
   if (RETRYABLE_ERROR_CODES.has(e.code)) return true;
   const msg = e.message || '';
-  return RETRYABLE_ERROR_MESSAGES.some(keyword => msg.includes(keyword));
+  return RETRYABLE_ERROR_MESSAGES.some((keyword) => msg.includes(keyword));
 }
 
 /**
  * 添加 verbose 模式的 axios 拦截器，输出请求/响应/错误的详细信息
  */
-function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: string) {
+function addVerboseInterceptors(
+  instance: AxiosInstance,
+  ctx: any,
+  proxyInfo: string,
+) {
   instance.interceptors.request.use((reqConfig: any) => {
     reqConfig._startTime = Date.now();
-    ctx.logger.info(`[src/proxy.ts] [debug] 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
+    ctx.logger.info(
+      `[src/proxy.ts] [debug] 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`,
+    );
     if (proxyInfo) {
       ctx.logger.info(`[src/proxy.ts] [debug] 🔌 via proxy: ${proxyInfo}`);
     }
@@ -41,13 +53,15 @@ function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: st
     (response) => {
       const elapsed = Date.now() - ((response.config as any)._startTime || 0);
       const dataLen = response.data
-        ? (typeof response.data === 'string' ? response.data.length
-          : (Buffer.isBuffer(response.data) ? response.data.length
-            : JSON.stringify(response.data).length))
+        ? typeof response.data === 'string'
+          ? response.data.length
+          : Buffer.isBuffer(response.data)
+            ? response.data.length
+            : JSON.stringify(response.data).length
         : 0;
       ctx.logger.info(
         `[src/proxy.ts] [debug] ✅ RESPONSE ${response.status} ${response.statusText} | ` +
-        `${response.config.url} | ${elapsed}ms | ~${(dataLen / 1024).toFixed(1)}KB`
+          `${response.config.url} | ${elapsed}ms | ~${(dataLen / 1024).toFixed(1)}KB`,
       );
       return response;
     },
@@ -58,10 +72,10 @@ function addVerboseInterceptors(instance: AxiosInstance, ctx: any, proxyInfo: st
       if (error.response?.status) info.push(`status=${error.response.status}`);
       if (error.message) info.push(`msg=${error.message}`);
       ctx.logger.error(
-        `[src/proxy.ts] [error] ❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`
+        `[src/proxy.ts] [error] ❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`,
       );
       return Promise.reject(error);
-    }
+    },
   );
 }
 
@@ -69,7 +83,7 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
   const verbose = !!(LOG_LEVELS[config.logLevel] >= LOG_LEVELS.debug && ctx);
 
   const headers: any = {
-    'Accept': 'application/json'
+    Accept: 'application/json',
   };
 
   if (config.useUserAgent && config.userAgent) {
@@ -83,11 +97,13 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
   if (!config.proxy?.enabled) {
     if (verbose) {
       ctx.logger.info(`[src/proxy.ts] [debug] 🔌 代理未启用，使用直连模式`);
-      ctx.logger.info(`[src/proxy.ts] [debug] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+      ctx.logger.info(
+        `[src/proxy.ts] [debug] 📋 请求头: ${JSON.stringify(headers, null, 2)}`,
+      );
     }
     const instance = axios.create({
       timeout: 15000,
-      headers
+      headers,
     });
     if (verbose) addVerboseInterceptors(instance, ctx, '');
     return instance;
@@ -98,7 +114,9 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
 
   if (verbose) {
     ctx.logger.info(`[src/proxy.ts] [debug] 🔌 代理已启用: ${proxyUrl}`);
-    ctx.logger.info(`[src/proxy.ts] [debug] 📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+    ctx.logger.info(
+      `[src/proxy.ts] [debug] 📋 请求头: ${JSON.stringify(headers, null, 2)}`,
+    );
   }
 
   let agent;
@@ -116,7 +134,9 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
       break;
     default:
       if (verbose) {
-        ctx.logger.warn(`[src/proxy.ts] [warn] ⚠️ 未知代理协议: ${protocol}，不使用代理`);
+        ctx.logger.warn(
+          `[src/proxy.ts] [warn] ⚠️ 未知代理协议: ${protocol}，不使用代理`,
+        );
       } else {
         console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
       }
@@ -129,7 +149,7 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
     httpAgent: agent,
     httpsAgent: agent,
     timeout: 15000,
-    headers
+    headers,
   });
 
   if (verbose) addVerboseInterceptors(instance, ctx, proxyUrl);
@@ -141,7 +161,7 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
  */
 export async function requestWithRetry<T>(
   fn: () => Promise<T>,
-  options?: { retries?: number; label?: string; ctx?: any }
+  options?: { retries?: number; label?: string; ctx?: any },
 ): Promise<T> {
   const maxRetries = options?.retries ?? 2;
   const label = options?.label ?? 'request';
@@ -158,10 +178,10 @@ export async function requestWithRetry<T>(
       if (ctx) {
         ctx.logger.warn(
           `[src/proxy.ts] [warn] 🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
-          `${delay}ms 后重试 (剩余 ${maxRetries - attempt - 1} 次)...`
+            `${delay}ms 后重试 (剩余 ${maxRetries - attempt - 1} 次)...`,
         );
       }
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   throw new Error(`[src/proxy.ts] ${label} 超过最大重试次数`);

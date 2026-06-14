@@ -1,98 +1,110 @@
-import { Context } from 'koishi'
-import * as fs from 'fs'
-import * as path from 'path'
-import { LOG_LEVELS } from '../types'
-import type { PuppeteerLifeCycleEvent } from 'puppeteer-core'
+import { Context } from 'koishi';
+import * as fs from 'fs';
+import * as path from 'path';
+import { LOG_LEVELS } from '../types';
+import type { PuppeteerLifeCycleEvent } from 'puppeteer-core';
 
-const BASE_FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Microsoft YaHei", "PingFang SC", sans-serif'
-const CUSTOM_FONT_FAMILY = 'CSLookupCustomFont'
+const BASE_FONT_STACK =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Microsoft YaHei", "PingFang SC", sans-serif';
+const CUSTOM_FONT_FAMILY = 'CSLookupCustomFont';
 
 function getFontFormat(ext: string): string {
-  if (ext === '.otf') return 'opentype'
-  if (ext === '.woff2') return 'woff2'
-  if (ext === '.woff') return 'woff'
-  return 'truetype'
+  if (ext === '.otf') return 'opentype';
+  if (ext === '.woff2') return 'woff2';
+  if (ext === '.woff') return 'woff';
+  return 'truetype';
 }
 
 function getFontMimeType(ext: string): string {
-  if (ext === '.otf') return 'font/otf'
-  if (ext === '.woff2') return 'font/woff2'
-  if (ext === '.woff') return 'font/woff'
-  return 'font/ttf'
+  if (ext === '.otf') return 'font/otf';
+  if (ext === '.woff2') return 'font/woff2';
+  if (ext === '.woff') return 'font/woff';
+  return 'font/ttf';
 }
 
 export interface CustomFontConfig {
-  css: string
-  fontFamily: string
+  css: string;
+  fontFamily: string;
 }
 
-export function buildCustomFontConfig(ctx: Context, fontPath?: string | null): CustomFontConfig | null {
-  if (!fontPath || fontPath.trim() === '') return null
+export function buildCustomFontConfig(
+  ctx: Context,
+  fontPath?: string | null,
+): CustomFontConfig | null {
+  if (!fontPath || fontPath.trim() === '') return null;
 
-  const resolvedPath = path.isAbsolute(fontPath) ? fontPath : path.resolve(fontPath)
+  const resolvedPath = path.isAbsolute(fontPath)
+    ? fontPath
+    : path.resolve(fontPath);
   if (!fs.existsSync(resolvedPath)) {
-    ctx.logger.warn(`[src/template/pptr-render-cs-inv.ts] [warn] ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`)
-    return null
+    ctx.logger.warn(
+      `[src/template/pptr-render-cs-inv.ts] [warn] ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`,
+    );
+    return null;
   }
 
   try {
-    const buffer = fs.readFileSync(resolvedPath)
-    const ext = path.extname(resolvedPath).toLowerCase()
-    const format = getFontFormat(ext)
-    const mime = getFontMimeType(ext)
+    const buffer = fs.readFileSync(resolvedPath);
+    const ext = path.extname(resolvedPath).toLowerCase();
+    const format = getFontFormat(ext);
+    const mime = getFontMimeType(ext);
 
     const css = `@font-face {
       font-family: '${CUSTOM_FONT_FAMILY}';
       src: url('data:${mime};base64,${buffer.toString('base64')}') format('${format}');
       font-weight: normal;
       font-style: normal;
-    }`
+    }`;
 
-    ctx.logger.debug(`[src/template/pptr-render-cs-inv.ts] [debug] ✅ 🔤 成功加载自定义字体: ${resolvedPath}`)
+    ctx.logger.debug(
+      `[src/template/pptr-render-cs-inv.ts] [debug] ✅ 🔤 成功加载自定义字体: ${resolvedPath}`,
+    );
     return {
       css,
-      fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`
-    }
+      fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`,
+    };
   } catch (e) {
-    ctx.logger.warn(`[src/template/pptr-render-cs-inv.ts] [warn] ❌ 🔤 加载自定义字体失败: ${e}`)
-    return null
+    ctx.logger.warn(
+      `[src/template/pptr-render-cs-inv.ts] [warn] ❌ 🔤 加载自定义字体失败: ${e}`,
+    );
+    return null;
   }
 }
 
 export interface GenerateHtmlOptions {
-  cardHTML: string
-  gridColumns: number
-  totalStr: string
-  steamId: string
-  steamName: string
-  playerAvatarUrl: string
-  playerLastLogoffTimeStr: string
-  darkMode: boolean
-  enableAvatarBackground?: boolean
-  fontConfig?: CustomFontConfig | null
-  showItemCount?: boolean
-  itemCountCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
-  itemNamePosition?: 'top' | 'center' | 'bottom'
-  itemNameBgOpacity?: number
-  itemImageScale?: number
-  footerCustomText?: string
-  watermarkEnabled?: boolean
-  watermarkText?: string
-  watermarkFontSize?: number
-  watermarkAngle?: number
-  watermarkOpacity?: number
-  watermarkRowGap?: number
-  watermarkColGap?: number
+  cardHTML: string;
+  gridColumns: number;
+  totalStr: string;
+  steamId: string;
+  steamName: string;
+  playerAvatarUrl: string;
+  playerLastLogoffTimeStr: string;
+  darkMode: boolean;
+  enableAvatarBackground?: boolean;
+  fontConfig?: CustomFontConfig | null;
+  showItemCount?: boolean;
+  itemCountCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  itemNamePosition?: 'top' | 'center' | 'bottom';
+  itemNameBgOpacity?: number;
+  itemImageScale?: number;
+  footerCustomText?: string;
+  watermarkEnabled?: boolean;
+  watermarkText?: string;
+  watermarkFontSize?: number;
+  watermarkAngle?: number;
+  watermarkOpacity?: number;
+  watermarkRowGap?: number;
+  watermarkColGap?: number;
 }
 
 export interface RenderCsInvImageOptions {
-  html: string
-  imageType?: string
-  imageQuality?: number
-  waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[]
-  viewportWidth: number
-  viewportHeight: number
-  logLevel?: string
+  html: string;
+  imageType?: string;
+  imageQuality?: number;
+  waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
+  viewportWidth: number;
+  viewportHeight: number;
+  logLevel?: string;
 }
 
 export function generateHtml(options: GenerateHtmlOptions): string {
@@ -120,54 +132,59 @@ export function generateHtml(options: GenerateHtmlOptions): string {
     watermarkOpacity = 0.6,
     watermarkRowGap = 60,
     watermarkColGap = 80,
-  } = options
+  } = options;
 
-  const fontFaceCss = fontConfig?.css || ''
-  const fontFamily = fontConfig?.fontFamily || BASE_FONT_STACK
+  const fontFaceCss = fontConfig?.css || '';
+  const fontFamily = fontConfig?.fontFamily || BASE_FONT_STACK;
 
-  const bgColor = darkMode ? '#1a1a2e' : '#f5f7fa'
-  const containerBg = darkMode ? 'rgba(255, 255, 255, 0.05)' : '#ffffff'
-  const textColor = darkMode ? '#e0e0e0' : '#333333'
-  const mutedColor = darkMode ? '#888888' : '#999999'
-  const borderColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : '#e8e8e8'
-  const cardBg = darkMode ? 'rgba(255, 255, 255, 0.03)' : '#fafafa'
-  const headerBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : '#ffffff'
-  const accentColor = '#1890ff'
+  const bgColor = darkMode ? '#1a1a2e' : '#f5f7fa';
+  const containerBg = darkMode ? 'rgba(255, 255, 255, 0.05)' : '#ffffff';
+  const textColor = darkMode ? '#e0e0e0' : '#333333';
+  const mutedColor = darkMode ? '#888888' : '#999999';
+  const borderColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : '#e8e8e8';
+  const cardBg = darkMode ? 'rgba(255, 255, 255, 0.03)' : '#fafafa';
+  const headerBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : '#ffffff';
+  const accentColor = '#1890ff';
 
-  const backgroundBlurDisplay = enableAvatarBackground ? 'block' : 'none'
-  const backgroundOpacity = darkMode ? '0.35' : '0.5'
+  const backgroundBlurDisplay = enableAvatarBackground ? 'block' : 'none';
+  const backgroundOpacity = darkMode ? '0.35' : '0.5';
 
-  const CARD_HEIGHT = 150
-  const GAP = 8
-  const PAGE_PADDING = 16
+  const CARD_HEIGHT = 150;
+  const GAP = 8;
+  const PAGE_PADDING = 16;
 
   const cornerPositions: Record<string, string> = {
     'top-left': 'top: 12px; left: 12px;',
     'top-right': 'top: 12px; right: 12px;',
     'bottom-left': 'bottom: 12px; left: 12px;',
     'bottom-right': 'bottom: 12px; right: 12px;',
-  }
-  const itemCountPosition = cornerPositions[itemCountCorner] || cornerPositions['top-right']
+  };
+  const itemCountPosition =
+    cornerPositions[itemCountCorner] || cornerPositions['top-right'];
 
-  const namePositionStyles: Record<string, { wrapper: string; justify: string }> = {
-    'top': {
+  const namePositionStyles: Record<
+    string,
+    { wrapper: string; justify: string }
+  > = {
+    top: {
       wrapper: 'top: 4px; left: 4px; right: 4px;',
-      justify: 'flex-start'
+      justify: 'flex-start',
     },
-    'center': {
+    center: {
       wrapper: 'top: 50%; left: 4px; right: 4px; transform: translateY(-50%);',
-      justify: 'center'
+      justify: 'center',
     },
-    'bottom': {
+    bottom: {
       wrapper: 'bottom: 4px; left: 4px; right: 4px;',
-      justify: 'flex-end'
+      justify: 'flex-end',
     },
-  }
-  const nameStyle = namePositionStyles[itemNamePosition] || namePositionStyles['top']
+  };
+  const nameStyle =
+    namePositionStyles[itemNamePosition] || namePositionStyles['top'];
 
   const nameBgColor = darkMode
     ? `rgba(0, 0, 0, ${itemNameBgOpacity})`
-    : `rgba(255, 255, 255, ${itemNameBgOpacity})`
+    : `rgba(255, 255, 255, ${itemNameBgOpacity})`;
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -447,18 +464,23 @@ export function generateHtml(options: GenerateHtmlOptions): string {
     </div>
     <div class="watermark-overlay">
       ${(() => {
-        if (!watermarkEnabled) return ''
-        const cols = 8
-        const rows = 80
-        return Array(cols * rows).fill(`<span class="watermark-text">${watermarkText}</span>`).join('')
+        if (!watermarkEnabled) return '';
+        const cols = 8;
+        const rows = 80;
+        return Array(cols * rows)
+          .fill(`<span class="watermark-text">${watermarkText}</span>`)
+          .join('');
       })()}
     </div>
   </div>
 </body>
-</html>`
+</html>`;
 }
 
-export async function renderCsInvImage(ctx: Context, options: RenderCsInvImageOptions): Promise<string> {
+export async function renderCsInvImage(
+  ctx: Context,
+  options: RenderCsInvImageOptions,
+): Promise<string> {
   const {
     html,
     imageType = 'jpeg',
@@ -467,45 +489,58 @@ export async function renderCsInvImage(ctx: Context, options: RenderCsInvImageOp
     viewportWidth,
     viewportHeight,
     logLevel = 'info',
-  } = options
+  } = options;
 
-  const page = await ctx.puppeteer.page()
+  const page = await ctx.puppeteer.page();
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    ctx.logger.info('[src/template/pptr-render-cs-inv.ts] [debug] 📄 正在设置页面内容...')
+    ctx.logger.info(
+      '[src/template/pptr-render-cs-inv.ts] [debug] 📄 正在设置页面内容...',
+    );
   }
 
-  await page.setContent(html, { waitUntil })
+  await page.setContent(html, { waitUntil });
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    ctx.logger.info('[src/template/pptr-render-cs-inv.ts] [debug] ⏳ 🖼️ 正在等待图片加载...')
+    ctx.logger.info(
+      '[src/template/pptr-render-cs-inv.ts] [debug] ⏳ 🖼️ 正在等待图片加载...',
+    );
   }
 
   try {
-    await page.waitForFunction(() => {
-      const allImages = Array.from(document.querySelectorAll('.item-image, .avatar'))
-      return allImages.every(img => (img as HTMLImageElement).complete)
-    }, { timeout: 15000 })
+    await page.waitForFunction(
+      () => {
+        const allImages = Array.from(
+          document.querySelectorAll('.item-image, .avatar'),
+        );
+        return allImages.every((img) => (img as HTMLImageElement).complete);
+      },
+      { timeout: 15000 },
+    );
   } catch (err) {
-    ctx.logger.warn('[src/template/pptr-render-cs-inv.ts] [warn] ⏰ 部分图片加载超时，将继续渲染')
+    ctx.logger.warn(
+      '[src/template/pptr-render-cs-inv.ts] [warn] ⏰ 部分图片加载超时，将继续渲染',
+    );
   }
 
-  await page.setViewport({ width: viewportWidth, height: viewportHeight })
+  await page.setViewport({ width: viewportWidth, height: viewportHeight });
 
   const screenshotOptions: any = {
     encoding: 'base64',
     type: imageType,
     omitBackground: true,
     fullPage: true,
-  }
+  };
   if (imageType !== 'png') {
-    screenshotOptions.quality = imageQuality
+    screenshotOptions.quality = imageQuality;
   }
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    ctx.logger.info('[src/template/pptr-render-cs-inv.ts] [debug] 📸 正在截取屏幕...')
+    ctx.logger.info(
+      '[src/template/pptr-render-cs-inv.ts] [debug] 📸 正在截取屏幕...',
+    );
   }
 
-  const image = await page.screenshot(screenshotOptions)
-  return `data:image/${imageType};base64,${image}`
+  const image = await page.screenshot(screenshotOptions);
+  return `data:image/${imageType};base64,${image}`;
 }
