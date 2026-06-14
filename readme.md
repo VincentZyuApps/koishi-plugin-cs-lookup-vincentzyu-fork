@@ -62,6 +62,8 @@
 | `preferOfficialSteamApi` | boolean | `true` | 优先使用 Steam 官方 API（关闭则优先使用 steamwebapi.com） |
 | `officialSteamApiKey` | string | `""` | Steam 官方免费 Key，从 https://steamcommunity.com/dev/apikey 获取 |
 | `steamWebApiKey` | string | `""` | steamwebapi.com 付费 Key（配额有限），getid 功能依赖此 Key |
+| `enableGetidCache` | boolean | `true` | 💾 是否缓存 getid 查询结果到数据库（减少 API 调用次数） |
+| `getidCacheDays` | number (1-365) | `30` | 📅 getid 缓存有效天数 |
 
 ### 📨 通用消息设置
 
@@ -72,6 +74,14 @@
 | `csMyidCommandName` | string | `"cs-myid"` | 🆔 查询已绑定 SteamID 指令名称 |
 | `getidCommandName` | string | `"getid"` | 🔍 解析 SteamID 指令名称 |
 | `replyToUser` | boolean | `true` | 是否引用回复用户触发的消息 |
+| `promptMode` | `"all"` / `"none"` / `"non-qq"` | `"non-qq"` | 💬 cs-bind 绑定替换确认模式（non-qq=QQ平台自动跳过确认直接替换） |
+
+### 🤖 QQ 官方 Bot 平台设置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enableQQMarkdown` | boolean | `true` | 💬 在 QQ 官方 Bot 平台发送图片时附带 Markdown + 按钮消息 |
+| `qqMarkdownKeyboardJson` | string | JSON | 📋 QQ Markdown 按钮 JSON 配置<br>支持变量：`${csInvCommandName}` `${csBindCommandName}` `${csMyidCommandName}` `${getidCommandName}` `${userId}` |
 
 ### 🎨 渲染设置（puppeteer 网页截图）
 
@@ -80,6 +90,9 @@
 | `enableDarkTheme` | boolean | `true` | 🌙 使用深色主题 |
 | `enableAvatarBackground` | boolean | `false` | 🖼️ 背景贴上用户头像（磨砂玻璃效果） |
 | `enableImageCache` | boolean | `true` | 💾 缓存饰品图片到磁盘（大幅提升重复查询速度） |
+| `csInvImageCachePath` | string[] | `["cache","cs_inv_image"]` | 📂 饰品图片 Base64 缓存路径（相对于 Koishi 根目录） |
+| `csInvDataCachePath` | string[] | `["cache","cs_inv_data"]` | 📂 库存 JSON verboseFileLog 输出路径（相对于 Koishi 根目录） |
+| `puppeteerShowRenderInfo` | boolean | `true` | 📊 是否在图片消息后显示渲染耗时、图片格式、质量等信息 |
 | `gridColumns` | number (2-10) | `5` | 📊 库存物品列数 |
 | `imageType` | `"png"` / `"jpeg"` / `"webp"` | `"jpeg"` | 📤 渲染图片输出格式（PNG 不支持 quality） |
 | `imageQuality` | number (0-100) | `60` | 📏 截图质量（对 PNG 无效） |
@@ -128,7 +141,7 @@
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `logLevel` | `"silent"` / `"error"` / `"warn"` / `"info"` / `"debug"` | `"info"` | 🔊 日志级别：debug 输出全部调试信息 |
-| `verboseFileLog` | boolean | `false` | 📁 库存完整 JSON 输出到 `../cache/inv_data/res.json` |
+| `verboseFileLog` | boolean | `false` | 📁 库存完整 JSON 输出到配置路径（默认 `cache/cs_inv_data/res.json`） |
 
 ---
 
@@ -168,7 +181,7 @@ cs-inv --no-refresh
 
 **参数优先级：** 消息里第一个 `@` 用户 > 第二参数 `userId` > 当前发送者
 
-如果已有绑定，插件会要求回复 `ok` 或 `cancel` 确认是否替换。
+如果已有绑定，默认行为是 QQ/QQGuild 平台自动替换，其他平台要求回复 `ok` 或 `cancel` 确认。可通过配置项 `promptMode` 调整。
 
 **示例：**
 ```
@@ -202,8 +215,9 @@ getid https://steamcommunity.com/profiles/76561199321190157/
 |------|------|
 | 数据库表 `cs_lookup_vincentzyu_fork` | Koishi 用户与 SteamID 的绑定关系 |
 | 数据库表 `cs_inv_cache_vincentzyu_fork` | Steam 库存接口返回的 JSON 缓存 |
-| `cache/inv_image/` | 饰品图片 Base64 磁盘缓存 |
-| `cache/inv_data/res.json` | `verboseFileLog` 开启时输出的完整库存 JSON |
+| 数据库表 `cs_getid_cache_vincentzyu_fork` | Steam 个人主页 URL → SteamID 的缓存 |
+| `cache/cs_inv_image/` | 饰品图片 Base64 磁盘缓存（默认路径，可配置） |
+| `cache/cs_inv_data/res.json` | `verboseFileLog` 开启时输出的完整库存 JSON（默认路径，可配置） |
 
 ---
 
