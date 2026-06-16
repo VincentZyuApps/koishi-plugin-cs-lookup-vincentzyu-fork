@@ -30,9 +30,9 @@ function addVerboseInterceptors(
 ) {
   instance.interceptors.request.use((reqConfig: any) => {
     reqConfig._startTime = Date.now();
-    logInfo(ctx, ctx.config, 'debug', __filename, `📤 ⚙️ 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
+    logInfo(ctx, ctx.config, 'debug', 'src/proxy.ts', `📤 ⚙️ 🌐 REQUEST ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
     if (proxyInfo) {
-      logInfo(ctx, ctx.config, 'debug', __filename, `🔗 🔌 via proxy: ${proxyInfo}`);
+      logInfo(ctx, ctx.config, 'debug', 'src/proxy.ts', `🔗 🔌 via proxy: ${proxyInfo}`);
     }
     return reqConfig;
   });
@@ -47,7 +47,7 @@ function addVerboseInterceptors(
             ? response.data.length
             : JSON.stringify(response.data).length
         : 0;
-      logInfo(ctx, ctx.config, 'debug', __filename, `📥 ✅ RESPONSE ${response.status} ${response.statusText} | ` +
+      logInfo(ctx, ctx.config, 'debug', 'src/proxy.ts', `📥 ✅ RESPONSE ${response.status} ${response.statusText} | ` +
           `${response.config.url} | ${elapsed}ms | ~${(dataLen / 1024).toFixed(1)}KB`);
       return response;
     }, (error) => {
@@ -56,7 +56,7 @@ function addVerboseInterceptors(
       if (error.code) info.push(`code=${error.code}`);
       if (error.response?.status) info.push(`status=${error.response.status}`);
       if (error.message) info.push(`msg=${error.message}`);
-      logInfo(ctx, ctx.config, 'error', __filename, `❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`);
+      logInfo(ctx, ctx.config, 'error', 'src/proxy.ts', `❌ REQUEST FAILED | ${error.config?.method?.toUpperCase()} ${error.config?.url} | ${elapsed}ms | ${info.join(' | ')}`);
       return Promise.reject(error);
     });
 }
@@ -77,8 +77,8 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
 
   if (!config.proxy?.enabled) {
     if (verbose) {
-      logInfo(ctx, config, 'debug', __filename, '🔗 🔌 代理未启用，使用直连模式');
-      logInfo(ctx, config, 'debug', __filename, `📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+      logInfo(ctx, config, 'debug', 'src/proxy.ts', '🔗 🔌 代理未启用，使用直连模式');
+      logInfo(ctx, config, 'debug', 'src/proxy.ts', `📋 请求头: ${JSON.stringify(headers, null, 2)}`);
     }
     const instance = axios.create({
       timeout: 15000, headers, });
@@ -90,8 +90,8 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
   const proxyUrl = `${protocol}://${host}:${port}`;
 
   if (verbose) {
-    logInfo(ctx, config, 'debug', __filename, `🔗 🔌 代理已启用: ${proxyUrl}`);
-    logInfo(ctx, config, 'debug', __filename, `📋 请求头: ${JSON.stringify(headers, null, 2)}`);
+    logInfo(ctx, config, 'debug', 'src/proxy.ts', `🔗 🔌 代理已启用: ${proxyUrl}`);
+    logInfo(ctx, config, 'debug', 'src/proxy.ts', `📋 请求头: ${JSON.stringify(headers, null, 2)}`);
   }
 
   let agent;
@@ -109,7 +109,7 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
       break;
     default:
       if (verbose) {
-        logInfo(ctx, config, 'warn', __filename, `🔗 ❓ ⚠️ 未知代理协议: ${protocol}，不使用代理`);
+        logInfo(ctx, config, 'warn', 'src/proxy.ts', `🔗 ❓ ⚠️ 未知代理协议: ${protocol}，不使用代理`);
       } else {
         console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
       }
@@ -144,7 +144,7 @@ export async function requestWithRetry<T>(
       }
       const delay = 1000 * (attempt + 1);
       if (ctx) {
-        logInfo(ctx, ctx.config, 'warn', __filename, `🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
+        logInfo(ctx, ctx.config, 'warn', 'src/proxy.ts', `🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
             `${delay}ms 后重试 (剩余 ${maxRetries - attempt - 1} 次)...`);
       }
       await new Promise((resolve) => setTimeout(resolve, delay));

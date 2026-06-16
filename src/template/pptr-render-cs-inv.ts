@@ -37,7 +37,7 @@ export function buildCustomFontConfig(
     ? fontPath
     : path.resolve(fontPath);
   if (!fs.existsSync(resolvedPath)) {
-    logInfo(ctx, ctx.config, 'warn', __filename, `📁 ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`);
+    logInfo(ctx, ctx.config, 'warn', 'src/template/pptr-render-cs-inv.ts', `📁 ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`);
     return null;
   }
 
@@ -54,11 +54,11 @@ export function buildCustomFontConfig(
       font-style: normal;
     }`;
 
-    logInfo(ctx, ctx.config, 'debug', __filename, `✔️ ⏳ ✅ 🔤 成功加载自定义字体: ${resolvedPath}`);
+    logInfo(ctx, ctx.config, 'debug', 'src/template/pptr-render-cs-inv.ts', `✔️ ⏳ ✅ 🔤 成功加载自定义字体: ${resolvedPath}`);
     return {
       css, fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`, };
   } catch (e) {
-    logInfo(ctx, ctx.config, 'warn', __filename, `⚡ ⏳ ❌ 🔤 加载自定义字体失败: ${e}`);
+    logInfo(ctx, ctx.config, 'warn', 'src/template/pptr-render-cs-inv.ts', `⚡ ⏳ ❌ 🔤 加载自定义字体失败: ${e}`);
     return null;
   }
 }
@@ -441,13 +441,13 @@ export async function renderCsInvImage(
   const page = await ctx.puppeteer.page();
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    logInfo(ctx, logLevel, 'debug', __filename, '📄 📄 正在设置页面内容...');
+    logInfo(ctx, logLevel, 'debug', 'src/template/pptr-render-cs-inv.ts', '📄 📄 正在设置页面内容...');
   }
 
   await page.setContent(html, { waitUntil });
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    logInfo(ctx, logLevel, 'debug', __filename, '🎯 ⏳ ⏳ 🖼️ 正在等待图片加载...');
+    logInfo(ctx, logLevel, 'debug', 'src/template/pptr-render-cs-inv.ts', '🎯 ⏳ ⏳ 🖼️ 正在等待图片加载...');
   }
 
   try {
@@ -458,7 +458,7 @@ export async function renderCsInvImage(
         return allImages.every((img) => (img as HTMLImageElement).complete);
       }, { timeout: 15000 });
   } catch (err) {
-    logInfo(ctx, logLevel, 'warn', __filename, '🎯 🎨 ⏳ ⏰ 部分图片加载超时，将继续渲染');
+    logInfo(ctx, logLevel, 'warn', 'src/template/pptr-render-cs-inv.ts', '🎯 🎨 ⏳ ⏰ 部分图片加载超时，将继续渲染');
   }
 
   await page.setViewport({ width: viewportWidth, height: viewportHeight });
@@ -470,7 +470,7 @@ export async function renderCsInvImage(
   }
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    logInfo(ctx, logLevel, 'debug', __filename, '📸 📸 正在截取屏幕...');
+    logInfo(ctx, logLevel, 'debug', 'src/template/pptr-render-cs-inv.ts', '📸 📸 正在截取屏幕...');
   }
 
   const image = await page.screenshot(screenshotOptions);

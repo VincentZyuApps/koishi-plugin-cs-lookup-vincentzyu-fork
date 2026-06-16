@@ -14,10 +14,10 @@ export async function bind(ctx: Context, config: any) {
       '', { authority: 0 }, )
     .alias('cs-bind')
     .action(async ({ session }, arg1_steamId, arg2_userId) => {
-      logInfo(ctx, config, 'debug', __filename, `🕵️‍♂️ 是否传入arg2_userId参数? ${arg2_userId ? '✅✅✅是' : '❌❌❌否'}`);
+      logInfo(ctx, config, 'debug', 'src/commands/cs-bind.ts', `🕵️‍♂️ 是否传入arg2_userId参数? ${arg2_userId ? '✅✅✅是' : '❌❌❌否'}`);
 
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
-      logInfo(ctx, config, 'info', __filename, `📥 arg1_steamId = ${arg1_steamId}, arg2_userId = ${arg2_userId}`);
+      logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `📥 arg1_steamId = ${arg1_steamId}, arg2_userId = ${arg2_userId}`);
 
       const isAtUserBanned =
         config.banAtUserArg === 'all' ||
@@ -42,7 +42,7 @@ export async function bind(ctx: Context, config: any) {
         USERID = session.userId;
         userIdSource = UserIdSource.SESSION;
       }
-      logInfo(ctx, config, 'info', __filename, `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
+      logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
 
       const userObj =
         typeof session.bot.getUser === 'function'
@@ -51,7 +51,7 @@ export async function bind(ctx: Context, config: any) {
               .catch(() => ({ name: session.username || USERID }))
           : { name: session.username || USERID };
 
-      logInfo(ctx, config, 'info', __filename, `🔍 👤 STEAMID = ${STEAMID}, USERID = ${USERID}`);
+      logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `🔍 👤 STEAMID = ${STEAMID}, USERID = ${USERID}`);
 
       if (!isOnlyDigits(STEAMID)) {
         const _r = await replyWithMarkdownKeyboard(

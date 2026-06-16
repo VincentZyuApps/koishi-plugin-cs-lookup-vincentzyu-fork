@@ -88,12 +88,12 @@ export function apply(ctx: Context, config: CsLookupConfig) {
   // 在插件 dispose 时关闭 REST 服务器
   ctx.on('dispose', () => {
     if (restServer) {
-      logInfo(ctx, config, 'info', __filename, '⛔ 🛑 🌐 正在关闭 REST 服务器...');
+      logInfo(ctx, config, 'info', 'src/index.ts', '⛔ 🛑 🌐 正在关闭 REST 服务器...');
       restServer.close((err) => {
         if (err) {
-          logInfo(ctx, config, 'error', __filename, `⛔ ⚡ ❌ 🌐 REST 服务器关闭失败: ${err}`);
+          logInfo(ctx, config, 'error', 'src/index.ts', `⛔ ⚡ ❌ 🌐 REST 服务器关闭失败: ${err}`);
         } else {
-          logInfo(ctx, config, 'info', __filename, '⛔ ✔️ ✅ 🌐 REST 服务器已关闭');
+          logInfo(ctx, config, 'info', 'src/index.ts', '⛔ ✔️ ✅ 🌐 REST 服务器已关闭');
         }
       });
     }

@@ -161,7 +161,7 @@ export async function replyWithMarkdownKeyboard(
             .map((l) => `> ${l}`)
             .join('\n')) +
       '\n\n---\n' +
-      `[不知道 Steam ID？点我获取 查steamid的网站url](mqqapi://aio/%69nlinecmd?command=https://steamid.io&enter=true)` +
+      `[👉不知道SteamID？🔗点我获取 查steamid的网站url🌐](mqqapi://aio/%69nlinecmd?command=https://steamid.io&enter=true)` +
       '\n\n- ↓ 其他cs饰品查询插件的操作 ↓';
     const kb = buildQueryKeyboard(
       {

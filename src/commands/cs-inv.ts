@@ -99,7 +99,7 @@ async function getImageBase64(
     const contentType = response.headers['content-type'] || 'image/jpeg';
     return `data:${contentType};base64,${base64}`;
   } catch (e) {
-    logInfo(ctx, logLevel, 'warn', __filename, `❌ 🖼️ 转换图片为Base64失败: ${url}, error: ${e.message}`);
+    logInfo(ctx, logLevel, 'warn', 'src/commands/cs-inv.ts', `❌ 🖼️ 转换图片为Base64失败: ${url}, error: ${e.message}`);
     return url;
   }
 }
@@ -151,7 +151,7 @@ export function inv(ctx: Context, config: any) {
         if (timingEnabled) {
           const elapsed = Date.now() - startTime;
           timing[label] = elapsed;
-          logInfo(ctx, config, 'debug', __filename, `⏱️ ${label}: ${elapsed}ms`);
+          logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `⏱️ ${label}: ${elapsed}ms`);
         }
       };
 
@@ -180,24 +180,24 @@ export function inv(ctx: Context, config: any) {
         if (match && !isAtUserBanned) {
           USERID = match[1];
           userIdSource = UserIdSource.ATUSER;
-          logInfo(ctx, config, 'info', __filename, `👥 🔎 👤 @ 解析到艾特用户: ${USERID}`);
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `👥 🔎 👤 @ 解析到艾特用户: ${USERID}`);
         } else {
           USERID = targetUser.trim();
           userIdSource = UserIdSource.CMDARG;
-          logInfo(ctx, config, 'info', __filename, `👥 👤 使用传入 userid: ${USERID}`);
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `👥 👤 使用传入 userid: ${USERID}`);
         }
       }
-      logInfo(ctx, config, 'info', __filename, `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
+      logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
 
       if (options.steamid) {
         STEAMID = options.steamid;
-        logInfo(ctx, config, 'info', __filename, `🔖 🔍 -s 指定的 steamid: ${STEAMID}`);
+        logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `🔖 🔍 -s 指定的 steamid: ${STEAMID}`);
       } else {
         const res = await ctx.database.get('cs_lookup_vincentzyu_fork', {
           userid: USERID, platform: PLATFORM, });
         if (res.length) {
           STEAMID = res[0].steamId;
-          logInfo(ctx, config, 'info', __filename, `🗄️ ✅ 从数据库查询到 steamid: ${STEAMID}`);
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `🗄️ ✅ 从数据库查询到 steamid: ${STEAMID}`);
         } else {
           const noSteamIdMsg = `⚠️ 请提供 steamID 或者使用 \`${config.getidCommandName}\` 命令获取或者使用 \`${config.csBindCommandName} <steamID>\` 进行绑定\n(查询的用户: ${USERID})`;
 
@@ -206,7 +206,7 @@ export function inv(ctx: Context, config: any) {
         }
       }
 
-      logInfo(ctx, config, 'info', __filename, `🔍 👤 STEAMID = ${STEAMID}, USERID = ${USERID}`);
+      logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `🔍 👤 STEAMID = ${STEAMID}, USERID = ${USERID}`);
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
       const waitMsgId = await session.send(
         `${replyPrefix}🔄 正在获取 Steam 库存 🖼️ 渲染图片中..... \n\t 🔍 查询 SteamId = ${STEAMID}`);
@@ -238,7 +238,7 @@ export function inv(ctx: Context, config: any) {
               avatarfull: player.avatarfull || '', personaname: player.personaname || '未知用户', lastlogoff: player.lastlogoff, };
           }
         } catch (e) {
-          logInfo(ctx, config, 'warn', __filename, `⚡ 🔌 ❌ 🎮 官方 Steam API 请求失败: ${e.message}`);
+          logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `⚡ 🔌 ❌ 🎮 官方 Steam API 请求失败: ${e.message}`);
         }
         return null;
       }
@@ -263,9 +263,9 @@ export function inv(ctx: Context, config: any) {
         } catch (e) {
           const status = e.response?.status;
           if (status === 402) {
-            logInfo(ctx, config, 'warn', __filename, '🔌 🌍 ⚠️ 💸 steamwebapi.com 配额已用尽 (402)');
+            logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', '🔌 🌍 ⚠️ 💸 steamwebapi.com 配额已用尽 (402)');
           } else {
-            logInfo(ctx, config, 'warn', __filename, `⚡ 🔌 ❌ 🌐 steamwebapi.com 请求失败 (${status || e.message})`);
+            logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `⚡ 🔌 ❌ 🌐 steamwebapi.com 请求失败 (${status || e.message})`);
           }
         }
         return null;
@@ -279,19 +279,19 @@ export function inv(ctx: Context, config: any) {
         const preferOfficial = config.preferOfficialSteamApi !== false;
 
         if (preferOfficial) {
-          logInfo(ctx, config, 'info', __filename, '🔌 🎮 优先使用官方 Steam API...');
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', '🔌 🎮 优先使用官方 Steam API...');
           let result = await fetchFromOfficialApi();
           if (result) return result;
 
-          logInfo(ctx, config, 'info', __filename, '⚡ 🔌 ⚠️ 🔀 官方 API 失败，回退到 steamwebapi.com...');
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', '⚡ 🔌 ⚠️ 🔀 官方 API 失败，回退到 steamwebapi.com...');
           result = await fetchFromSteamWebApi();
           if (result) return result;
         } else {
-          logInfo(ctx, config, 'info', __filename, '🔌 🌍 🌐 优先使用 steamwebapi.com...');
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', '🔌 🌍 🌐 优先使用 steamwebapi.com...');
           let result = await fetchFromSteamWebApi();
           if (result) return result;
 
-          logInfo(ctx, config, 'info', __filename, '⚡ 🔌 ⚠️ 🔀 steamwebapi.com 失败，回退到官方 Steam API...');
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', '⚡ 🔌 ⚠️ 🔀 steamwebapi.com 失败，回退到官方 Steam API...');
           result = await fetchFromOfficialApi();
           if (result) return result;
         }
@@ -313,7 +313,7 @@ export function inv(ctx: Context, config: any) {
           ctx, axiosWithProxy, playerAvatarFullUrl, config.logLevel);
         logTiming('转换头像为Base64');
 
-        logInfo(ctx, config, 'info', __filename, `🎯 🎮 🖼️ playerAvatarFullUrl = ${playerAvatarFullUrl}`);
+        logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `🎯 🎮 🖼️ playerAvatarFullUrl = ${playerAvatarFullUrl}`);
         const playerPersonName = playerInfo.personaname;
         const playerLastLogoff = playerInfo.lastlogoff;
         const playerLastLogoffTimeStr = playerLastLogoff
@@ -330,7 +330,7 @@ export function inv(ctx: Context, config: any) {
             if (config.invDbCacheDays > 0 && age < config.invDbCacheDays) {
               invData = JSON.parse(cached[0].inv_json);
               usedCache = true;
-              logInfo(ctx, config, 'info', __filename, `💿 🗄️ 💾 ✅ 使用数据库缓存库存数据: ${STEAMID}`);
+              logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `💿 🗄️ 💾 ✅ 使用数据库缓存库存数据: ${STEAMID}`);
             }
           }
         }
@@ -346,14 +346,14 @@ export function inv(ctx: Context, config: any) {
         }
         logTiming('获取库存数据');
 
-        logInfo(ctx, config, 'debug', __filename, `📦 invData的前1000个字符： ${JSON.stringify(invData).slice(0, 1000)}.....`);
+        logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `📦 invData的前1000个字符： ${JSON.stringify(invData).slice(0, 1000)}.....`);
 
         if (config.verboseFileLog) {
           try {
             writeInvDataToFile(cacheDataDir, invData);
-            logInfo(ctx, config, 'debug', __filename, `📝 已将库存数据写入: ${path.join(cacheDataDir, 'res.json')}`);
+            logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `📝 已将库存数据写入: ${path.join(cacheDataDir, 'res.json')}`);
           } catch (e) {
-            logInfo(ctx, config, 'warn', __filename, `⚡ 🎒 ❌ 📁 写入库存数据文件失败: ${e.message}`);
+            logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `⚡ 🎒 ❌ 📁 写入库存数据文件失败: ${e.message}`);
           }
         }
 
@@ -363,7 +363,7 @@ export function inv(ctx: Context, config: any) {
         let pageHeight = 500;
 
         if (!invData.descriptions || invData.descriptions.length === 0) {
-          logInfo(ctx, config, 'info', __filename, '🎒 📭 invData没有descriptions字段。');
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', '🎒 📭 invData没有descriptions字段。');
           gridColumns = 1;
           totalStr = `总物品数: 0`;
           cardHtml = `
@@ -371,7 +371,7 @@ export function inv(ctx: Context, config: any) {
           `;
           pageHeight = 400;
         } else {
-          logInfo(ctx, config, 'info', __filename, '🎒 📋 ✅ invData有descriptions字段。');
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', '🎒 📋 ✅ invData有descriptions字段。');
 
           if (config.enableImageCache !== false) {
             ensureCacheDir(cacheImageDir);
@@ -405,7 +405,7 @@ export function inv(ctx: Context, config: any) {
           }
 
           if (timingEnabled && config.enableImageCache !== false) {
-            logInfo(ctx, config, 'debug', __filename, `📊 缓存统计: 命中 ${cacheHitCount}, 未命中 ${cacheMissCount}`);
+            logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `📊 缓存统计: 命中 ${cacheHitCount}, 未命中 ${cacheMissCount}`);
           }
           logTiming('转换饰品图片为Base64');
 
@@ -461,15 +461,15 @@ export function inv(ctx: Context, config: any) {
           session, ctx, config, '', '', `# CS2 库存查询结果 ✨\n\n> Steam ID: ${STEAMID}\n> 用户名: ${playerPersonName}`);
 
         if (timingEnabled) {
-          logInfo(ctx, config, 'debug', __filename, '⏳ 📊 ⏱️ ========== 时间统计汇总 ==========');
+          logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', '⏳ 📊 ⏱️ ========== 时间统计汇总 ==========');
           for (const [label, time] of Object.entries(timing)) {
-            logInfo(ctx, config, 'debug', __filename, `⏱️   ${label}:\t${time}ms`);
+            logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `⏱️   ${label}:\t${time}ms`);
           }
-          logInfo(ctx, config, 'debug', __filename, `⏳ ⏱️   总耗时: ${totalTime}ms`);
-          logInfo(ctx, config, 'debug', __filename, '⏱️ ====================================');
+          logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `⏳ ⏱️   总耗时: ${totalTime}ms`);
+          logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', '⏱️ ====================================');
         }
       } catch (e) {
-        logInfo(ctx, config, 'error', __filename, `⚡ ❌ 💥 发生错误: ${e.stack || e}`);
+        logInfo(ctx, config, 'error', 'src/commands/cs-inv.ts', `⚡ ❌ 💥 发生错误: ${e.stack || e}`);
         let cardHtml = '';
 
         let errorMessage = '发生未知错误';
@@ -502,7 +502,7 @@ export function inv(ctx: Context, config: any) {
               playerInfo.lastlogoff * 1000, ).toLocaleString();
           }
         } catch (err) {
-          logInfo(ctx, config, 'warn', __filename, `⚠️ 🖼️ 渲染错误页面时获取用户信息失败: ${err.message}`);
+          logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `⚠️ 🖼️ 渲染错误页面时获取用户信息失败: ${err.message}`);
         }
 
         const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
@@ -521,7 +521,7 @@ export function inv(ctx: Context, config: any) {
         try {
           await session.bot.deleteMessage(session.guildId, String(waitMsgId));
         } catch (err) {
-          logInfo(ctx, config, 'info', __filename, `⚠️ 🗑️ 消息撤回失败，有可能是过太久了导致qq无法撤回。 err: ${err}`);
+          logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `⚠️ 🗑️ 消息撤回失败，有可能是过太久了导致qq无法撤回。 err: ${err}`);
         }
       }
     });

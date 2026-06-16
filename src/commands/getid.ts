@@ -41,7 +41,7 @@ export function apply(ctx: Context, config: any) {
             if (age < config.getidCacheDays) {
               data = {
                 personaname: cached[0].personaName, steamid: cached[0].steamId, };
-              logInfo(ctx, config, 'info', __filename, `💿 💾 getid 缓存命中: ${profLink}`);
+              logInfo(ctx, config, 'info', 'src/commands/getid.ts', `💿 💾 getid 缓存命中: ${profLink}`);
             }
           }
         }
@@ -73,7 +73,7 @@ export function apply(ctx: Context, config: any) {
             session, ctx, config, '获取SteamID操作', '💸 steamwebapi.com 配额已用尽 (402)，请稍后再试或充值配额。');
           if (_r !== undefined) return _r;
         }
-        logInfo(ctx, config, 'error', __filename, `⚡ ❌ 🔍 请求失败: ${e.message}`);
+        logInfo(ctx, config, 'error', 'src/commands/getid.ts', `⚡ ❌ 🔍 请求失败: ${e.message}`);
         const _r = await replyWithMarkdownKeyboard(
           session, ctx, config, '获取SteamID操作', `❌ 获取 Steam ID 失败: ${e.message}`);
         if (_r !== undefined) return _r;

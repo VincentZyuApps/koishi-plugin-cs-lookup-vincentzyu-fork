@@ -66,7 +66,7 @@ export function startRestServer(ctx: Context, config: any) {
 
   // 处理 /cs-inv 接口
   fastify.get('/cs-inv', async (request, reply) => {
-    logInfo(ctx, config, 'info', __filename, `🌐 📥 REST /cs-inv 收到请求: steamid=${(request.query as any).steamid} refresh=${(request.query as any).refresh} ip=${request.ip}`);
+    logInfo(ctx, config, 'info', 'src/rest-server.ts', `🌐 📥 REST /cs-inv 收到请求: steamid=${(request.query as any).steamid} refresh=${(request.query as any).refresh} ip=${request.ip}`);
     try {
       const { steamid, refresh } = request.query as any;
 
@@ -99,7 +99,7 @@ export function startRestServer(ctx: Context, config: any) {
               avatarfull: player.avatarfull || '', personaname: player.personaname || '未知用户', lastlogoff: player.lastlogoff, };
           }
         } catch (e) {
-          logInfo(ctx, config, 'warn', __filename, `⚡ 🔌 ❌ 🎮 官方 Steam API 请求失败: ${e.message}`);
+          logInfo(ctx, config, 'warn', 'src/rest-server.ts', `⚡ 🔌 ❌ 🎮 官方 Steam API 请求失败: ${e.message}`);
         }
         return null;
       }
@@ -121,9 +121,9 @@ export function startRestServer(ctx: Context, config: any) {
         } catch (e) {
           const status = e.response?.status;
           if (status === 402) {
-            logInfo(ctx, config, 'warn', __filename, '🔌 🌍 ⚠️ 💸 steamwebapi.com 配额已用尽 (402)');
+            logInfo(ctx, config, 'warn', 'src/rest-server.ts', '🔌 🌍 ⚠️ 💸 steamwebapi.com 配额已用尽 (402)');
           } else {
-            logInfo(ctx, config, 'warn', __filename, `⚡ 🔌 ❌ 🌐 steamwebapi.com 请求失败 (${status || e.message})`);
+            logInfo(ctx, config, 'warn', 'src/rest-server.ts', `⚡ 🔌 ❌ 🌐 steamwebapi.com 请求失败 (${status || e.message})`);
           }
         }
         return null;
@@ -135,20 +135,20 @@ export function startRestServer(ctx: Context, config: any) {
 
         if (preferOfficial) {
           // 优先官方 API，steamwebapi.com 作为回退
-          logInfo(ctx, config, 'info', __filename, '🔌 🎮 优先使用官方 Steam API...');
+          logInfo(ctx, config, 'info', 'src/rest-server.ts', '🔌 🎮 优先使用官方 Steam API...');
           let result = await fetchFromOfficialApi();
           if (result) return result;
 
-          logInfo(ctx, config, 'info', __filename, '⚡ 🔌 ⚠️ 🔀 官方 API 失败，回退到 steamwebapi.com...');
+          logInfo(ctx, config, 'info', 'src/rest-server.ts', '⚡ 🔌 ⚠️ 🔀 官方 API 失败，回退到 steamwebapi.com...');
           result = await fetchFromSteamWebApi();
           if (result) return result;
         } else {
           // 优先 steamwebapi.com，官方 API 作为回退
-          logInfo(ctx, config, 'info', __filename, '🔌 🌍 🌐 优先使用 steamwebapi.com...');
+          logInfo(ctx, config, 'info', 'src/rest-server.ts', '🔌 🌍 🌐 优先使用 steamwebapi.com...');
           let result = await fetchFromSteamWebApi();
           if (result) return result;
 
-          logInfo(ctx, config, 'info', __filename, '⚡ 🔌 ⚠️ 🔀 steamwebapi.com 失败，回退到官方 Steam API...');
+          logInfo(ctx, config, 'info', 'src/rest-server.ts', '⚡ 🔌 ⚠️ 🔀 steamwebapi.com 失败，回退到官方 Steam API...');
           result = await fetchFromOfficialApi();
           if (result) return result;
         }
@@ -163,9 +163,9 @@ export function startRestServer(ctx: Context, config: any) {
       }
 
       // 获取玩家信息
-      logInfo(ctx, config, 'info', __filename, '🎮 👤 开始获取玩家信息...');
+      logInfo(ctx, config, 'info', 'src/rest-server.ts', '🎮 👤 开始获取玩家信息...');
       const playerInfo = await fetchPlayerInfo();
-      logInfo(ctx, config, 'info', __filename, `✔️ 🎮 ✅ 👤 玩家信息获取成功: ${playerInfo.personaname}`);
+      logInfo(ctx, config, 'info', 'src/rest-server.ts', `✔️ 🎮 ✅ 👤 玩家信息获取成功: ${playerInfo.personaname}`);
 
       // 获取库存数据（支持缓存）
       const useCache = config.enableInvDbCache && config.invDbCacheDays > 0 && refresh !== 'true';
@@ -179,16 +179,16 @@ export function startRestServer(ctx: Context, config: any) {
           if (age < config.invDbCacheDays) {
             invData = JSON.parse(cached[0].inv_json);
             usedCache = true;
-            logInfo(ctx, config, 'info', __filename, `💿 🗄️ 💾 ✅ REST: 使用数据库缓存: ${steamid}`);
+            logInfo(ctx, config, 'info', 'src/rest-server.ts', `💿 🗄️ 💾 ✅ REST: 使用数据库缓存: ${steamid}`);
           }
         }
       }
       if (!usedCache) {
-        logInfo(ctx, config, 'info', __filename, '🎒 📦 开始获取库存数据...');
+        logInfo(ctx, config, 'info', 'src/rest-server.ts', '🎒 📦 开始获取库存数据...');
         const invRes = await requestWithRetry(
           () => axiosWithProxy.get(invUrl), { label: 'Steam库存数据', ctx });
         invData = invRes.data;
-        logInfo(ctx, config, 'info', __filename, `✔️ 🎒 ✅ 📦 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`);
+        logInfo(ctx, config, 'info', 'src/rest-server.ts', `✔️ 🎒 ✅ 📦 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`);
         if (config.enableInvDbCache && config.invDbCacheDays > 0) {
           await ctx.database.upsert('cs_inv_cache_vincentzyu_fork', [
             {
@@ -202,16 +202,16 @@ export function startRestServer(ctx: Context, config: any) {
           steamid, timestamp: Date.now(), api: 'Steam Inventory API', player: {
             name: playerInfo.personaname, avatar: playerInfo.avatarfull, }, }, data: invData, };
 
-      logInfo(ctx, config, 'info', __filename, '📥 📡 ✅ 准备返回响应...');
+      logInfo(ctx, config, 'info', 'src/rest-server.ts', '📥 📡 ✅ 准备返回响应...');
       return responseData;
     } catch (error) {
-      logInfo(ctx, config, 'error', __filename, `⚡ 🔌 ❌ 💥 REST API 错误: ${error.stack || error}`);
+      logInfo(ctx, config, 'error', 'src/rest-server.ts', `⚡ 🔌 ❌ 💥 REST API 错误: ${error.stack || error}`);
       // 确保返回有效的 JSON 响应
       try {
         return reply.status(500).send({
           success: false, error: error.message || 'Internal server error', });
       } catch (replyError) {
-        logInfo(ctx, config, 'error', __filename, `⚡ 📥 ❌ 💥 响应错误: ${replyError.stack || replyError}`);
+        logInfo(ctx, config, 'error', 'src/rest-server.ts', `⚡ 📥 ❌ 💥 响应错误: ${replyError.stack || replyError}`);
         // 作为最后的尝试，返回一个简单的错误响应
         return {
           success: false, error: 'Internal server error', };
@@ -251,7 +251,7 @@ export function startRestServer(ctx: Context, config: any) {
       reply.header('Cache-Control', 'public, max-age=86400'); // 缓存1天
       return compressedBuffer;
     } catch (error) {
-      logInfo(ctx, config, 'error', __filename, `⚡ ❌ 🖼️ REST API 图片代理错误: ${error.stack || error}`);
+      logInfo(ctx, config, 'error', 'src/rest-server.ts', `⚡ ❌ 🖼️ REST API 图片代理错误: ${error.stack || error}`);
       return reply.status(500).send({
         success: false, error: error.message || 'Internal server error', });
     }
@@ -284,7 +284,7 @@ export function startRestServer(ctx: Context, config: any) {
       reply.header('Cache-Control', 'public, max-age=86400'); // 缓存1天
       return compressedBuffer;
     } catch (error) {
-      logInfo(ctx, config, 'error', __filename, `⚡ 🔗 ❌ 👤 REST API 玩家头像代理错误: ${error.stack || error}`);
+      logInfo(ctx, config, 'error', 'src/rest-server.ts', `⚡ 🔗 ❌ 👤 REST API 玩家头像代理错误: ${error.stack || error}`);
       return reply.status(500).send({
         success: false, error: error.message || 'Internal server error', });
     }
@@ -295,10 +295,10 @@ export function startRestServer(ctx: Context, config: any) {
     {
       host: config.restServerHost || '0.0.0.0', port: config.restServerPort || 60730, }, (err, address) => {
       if (err) {
-        logInfo(ctx, config, 'error', __filename, `🚀 ⚡ ❌ 🌐 REST 服务器启动失败: ${err}`);
+        logInfo(ctx, config, 'error', 'src/rest-server.ts', `🚀 ⚡ ❌ 🌐 REST 服务器启动失败: ${err}`);
         return;
       }
-      logInfo(ctx, config, 'info', __filename, `🚀 ✔️ ✅ 🌐 REST 服务器已启动: ${address}`);
+      logInfo(ctx, config, 'info', 'src/rest-server.ts', `🚀 ✔️ ✅ 🌐 REST 服务器已启动: ${address}`);
     });
 
   // 返回 Fastify 实例，以便在插件 dispose 时关闭
