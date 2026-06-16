@@ -168,16 +168,19 @@ export function startRestServer(ctx: Context, config: any) {
       logInfo(ctx, config, 'info', __filename, `✔️ 🎮 ✅ 👤 玩家信息获取成功: ${playerInfo.personaname}`);
 
       // 获取库存数据（支持缓存）
-      const useCache = config.enableInvDbCache && refresh !== 'true';
+      const useCache = config.enableInvDbCache && config.invDbCacheDays > 0 && refresh !== 'true';
       let invData: any;
       let usedCache = false;
       if (useCache) {
         const cached = await ctx.database.get('cs_inv_cache_vincentzyu_fork', {
           steamid, });
         if (cached.length) {
-          invData = JSON.parse(cached[0].inv_json);
-          usedCache = true;
-          logInfo(ctx, config, 'info', __filename, `💿 🗄️ 💾 ✅ REST: 使用数据库缓存: ${steamid}`);
+          const age = (Date.now() - cached[0].cached_at) / 86400000;
+          if (age < config.invDbCacheDays) {
+            invData = JSON.parse(cached[0].inv_json);
+            usedCache = true;
+            logInfo(ctx, config, 'info', __filename, `💿 🗄️ 💾 ✅ REST: 使用数据库缓存: ${steamid}`);
+          }
         }
       }
       if (!usedCache) {
@@ -186,7 +189,7 @@ export function startRestServer(ctx: Context, config: any) {
           () => axiosWithProxy.get(invUrl), { label: 'Steam库存数据', ctx });
         invData = invRes.data;
         logInfo(ctx, config, 'info', __filename, `✔️ 🎒 ✅ 📦 库存数据获取成功，物品数量: ${invData.total_inventory_count || 0}`);
-        if (config.enableInvDbCache) {
+        if (config.enableInvDbCache && config.invDbCacheDays > 0) {
           await ctx.database.upsert('cs_inv_cache_vincentzyu_fork', [
             {
               steamid, inv_json: JSON.stringify(invData), cached_at: Date.now(), }, ]);

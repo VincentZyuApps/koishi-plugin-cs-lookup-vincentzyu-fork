@@ -162,7 +162,7 @@ export function inv(ctx: Context, config: any) {
         ? true
         : options.refresh
           ? false
-          : config.enableInvDbCache;
+          : (config.enableInvDbCache && config.invDbCacheDays > 0);
 
       const PLATFORM = session.platform;
       let USERID = session.userId;
@@ -326,9 +326,12 @@ export function inv(ctx: Context, config: any) {
           const cached = await ctx.database.get(
             'cs_inv_cache_vincentzyu_fork', { steamid: STEAMID });
           if (cached.length) {
-            invData = JSON.parse(cached[0].inv_json);
-            usedCache = true;
-            logInfo(ctx, config, 'info', __filename, `💿 🗄️ 💾 ✅ 使用数据库缓存库存数据: ${STEAMID}`);
+            const age = (Date.now() - cached[0].cached_at) / 86400000;
+            if (config.invDbCacheDays > 0 && age < config.invDbCacheDays) {
+              invData = JSON.parse(cached[0].inv_json);
+              usedCache = true;
+              logInfo(ctx, config, 'info', __filename, `💿 🗄️ 💾 ✅ 使用数据库缓存库存数据: ${STEAMID}`);
+            }
           }
         }
         if (!usedCache) {
@@ -445,7 +448,7 @@ export function inv(ctx: Context, config: any) {
           : '';
 
         const totalTime = Date.now() - startTime;
-        let msg = `${replyPrefixResult}${h.image(invImageBase64)} ✅ 查询结果 ↑`;
+        let msg = `${replyPrefixResult}${h.image(invImageBase64)} ✅ 查询结果 ↑ \n \t🔎使用传入的艾特、userid、steamid可以查询别人的哦~`;
 
         if (config.puppeteerShowRenderInfo) {
           msg += `\n(🖼️ 渲染耗时：${totalTime}ms | 类型：${config.imageType} | 质量：${config.imageQuality})`;

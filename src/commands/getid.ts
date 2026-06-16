@@ -33,7 +33,7 @@ export function apply(ctx: Context, config: any) {
         let data: any;
 
         // 查缓存
-        if (config.enableGetidCache) {
+        if (config.enableGetidDbCache) {
           const cached = await ctx.database.get(
             'cs_getid_cache_vincentzyu_fork', { url: profLink });
           if (cached.length) {
@@ -54,7 +54,7 @@ export function apply(ctx: Context, config: any) {
           data = response.data;
 
           // 写入缓存
-          if (config.enableGetidCache) {
+          if (config.enableGetidDbCache) {
             await ctx.database.upsert('cs_getid_cache_vincentzyu_fork', [
               {
                 url: profLink, steamId: data.steamid, personaName: data.personaname, cached_at: Date.now(), }, ]);

@@ -13,6 +13,8 @@ export interface Config {
   // ==================================================================
   /** 是否默认使用数据库缓存库存数据 */
   enableInvDbCache: boolean;
+  /** 库存数据库缓存有效天数（0=禁用） */
+  invDbCacheDays: number;
   /** 优先使用 Steam 官方 API（关闭则优先使用 steamwebapi.com） */
   preferOfficialSteamApi: boolean;
   /** Steam 官方免费 API Key */
@@ -20,7 +22,7 @@ export interface Config {
   /** steamwebapi.com 付费 API Key */
   steamWebApiKey?: string;
   /** 是否缓存 getid 查询结果到数据库 */
-  enableGetidCache: boolean;
+  enableGetidDbCache: boolean;
   /** getid 缓存有效天数 */
   getidCacheDays: number;
 
@@ -163,6 +165,12 @@ export const Config: Schema<Config> = Schema.intersect([
       .description(
         '💾 cs-inv 指令是否默认使用数据库缓存库存数据（true=有缓存直接用，false=每次实时拉取）',
       ),
+    invDbCacheDays: Schema.number()
+      .default(7)
+      .min(0)
+      .max(365)
+      .step(1)
+      .description('📅 库存数据库缓存有效天数（0=禁用缓存）'),
     preferOfficialSteamApi: Schema.boolean()
       .default(true)
       .description(
@@ -178,7 +186,7 @@ export const Config: Schema<Config> = Schema.intersect([
       .description(
         '🔑 steamwebapi.com 的 API Key <br> <i> （付费API，但是有免费配额，但是免费配额有限，作为官方 API 的回退/备用）</i>',
       ),
-    enableGetidCache: Schema.boolean()
+    enableGetidDbCache: Schema.boolean()
       .default(true)
       .description('💾 是否缓存 getid 查询结果到数据库 <br> <i> （减少 steamwebapi.com 的 API 调用次数. 建议保持打开，steamwebapi.com API的免费配额有限）</i>'),
     getidCacheDays: Schema.number()
