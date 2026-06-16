@@ -6,6 +6,7 @@ import { myid } from './commands/cs-myid';
 import { startRestServer } from './rest-server';
 import type { Config as CsLookupConfig } from './config';
 import { Config as ConfigSchema } from './config';
+import { logInfo } from './logger';
 export { usage } from './usage';
 
 export const name = 'cs-lookup-vincentzyu-fork';
@@ -87,14 +88,12 @@ export function apply(ctx: Context, config: CsLookupConfig) {
   // 在插件 dispose 时关闭 REST 服务器
   ctx.on('dispose', () => {
     if (restServer) {
-      ctx.logger.info('[src/index.ts] [info] 🛑 🌐 正在关闭 REST 服务器...');
+      logInfo(ctx, config, 'info', __filename, '⛔ 🛑 🌐 正在关闭 REST 服务器...');
       restServer.close((err) => {
         if (err) {
-          ctx.logger.error(
-            `[src/index.ts] [error] ❌ 🌐 REST 服务器关闭失败: ${err}`,
-          );
+          logInfo(ctx, config, 'error', __filename, `⛔ ⚡ ❌ 🌐 REST 服务器关闭失败: ${err}`);
         } else {
-          ctx.logger.info('[src/index.ts] [info] ✅ 🌐 REST 服务器已关闭');
+          logInfo(ctx, config, 'info', __filename, '⛔ ✔️ ✅ 🌐 REST 服务器已关闭');
         }
       });
     }

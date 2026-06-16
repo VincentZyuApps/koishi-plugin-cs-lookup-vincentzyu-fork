@@ -9,6 +9,10 @@
 [![Koishi Forum](https://img.shields.io/badge/forum.koishi.xyz_topic_12595-5546A3?style=for-the-badge&logo=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ff%2Ff3%2FKoishi.js_Logo.png&logoColor=white)](https://forum.koishi.xyz/t/topic/12595)
 [![QQ群](https://img.shields.io/badge/QQ群-1085190201-12B7F5?style=flat-square&logo=qq&logoColor=white)](https://qm.qq.com/q/4vjto4V7Di)
 
+<p><del>💬 插件使用问题 / 🐛 Bug反馈 / 👨‍💻 插件开发交流，欢迎加入QQ群：<b>259248174</b>   🎉（这个群G了）</del></p> 
+<p>💬 插件使用问题 / 🐛 Bug反馈 / 👨‍💻 插件开发交流，欢迎加入新QQ群：<b>1085190201</b> 🎉</p>
+<p>💡 在群里直接艾特我，回复的更快哦~ ✨</p>
+
 基于上游 [`koishi-plugin-cs-lookup`](https://github.com/itzdrli/koishi-plugin-cs-lookup) fork 的增强版插件，用于查询 CS2 / CS:GO Steam 库存并渲染图片，同时补充了 SteamID 绑定、缓存、代理、渲染自定义和 REST API 等能力。
 
 ## 📸 效果预览

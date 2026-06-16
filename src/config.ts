@@ -43,6 +43,8 @@ export interface Config {
   replyToUser: boolean;
   /** 💬 绑定替换时的 prompt 交互确认模式 */
   promptMode: 'all' | 'none' | 'non-qq';
+  /** 👤 cs-inv / cs-bind 指令中 @用户 的禁用范围 */
+  banAtUserArg: 'none' | 'all' | 'qq';
 
   // ==================================================================
   // ===== 🤖 QQ 官方 Bot 平台设置 =====
@@ -217,6 +219,14 @@ export const Config: Schema<Config> = Schema.intersect([
       .role('radio')
       .description(
         '💬 cs-bind指令 绑定steamid替换时的 prompt 交互确认模式 <br> <i> ⚠️注意不影响arg传参，所有平台都支持arg传参 </i>',
+      ),
+    banAtUserArg: Schema.union([
+      Schema.const('none').description('🌐 全部平台都允许解析 @用户'),
+      Schema.const('all').description('🚫 全部平台都禁止解析 @用户，仅支持传参'),
+      Schema.const('qq').description('💬 仅 qq 平台禁止解析 @用户（默认）'),
+    ]).default('qq').role('radio')
+      .description(
+        '👤 cs-inv / cs-bind 指令中 @用户 的禁用范围 <br> <i> 被禁时只能通过传参或自身使用指令 </i>',
       ),
   }).description('📨 通用消息设置'),
 
@@ -420,7 +430,7 @@ export const Config: Schema<Config> = Schema.intersect([
         .role('radio')
         .default(PROXY_PROTOCOL.SOCKS5H),
       host: Schema.string().description('🏠 代理地址。').default('127.0.0.1'),
-      port: Schema.number().description('🛖 代理端口。').default(7897),
+      port: Schema.number().description('🛖 代理端口。').default(7891),
     }),
     useUserAgent: Schema.boolean()
       .description('🌐 是否使用自定义用户代理 (User-Agent)')

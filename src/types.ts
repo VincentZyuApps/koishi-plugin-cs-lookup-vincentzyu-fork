@@ -23,3 +23,10 @@ export const LOG_LEVELS = {
   debug: 4,
 } as const;
 export type LogLevel = keyof typeof LOG_LEVELS;
+export const DEFAULT_LOG_LEVEL: LogLevel = 'info';
+
+export enum UserIdSource {
+  ATUSER = 'ATUSER',
+  CMDARG = 'CMDARG',
+  SESSION = 'SESSION',
+}

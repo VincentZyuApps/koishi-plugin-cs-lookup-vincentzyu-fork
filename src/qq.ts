@@ -31,7 +31,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${csMyidCommandName} --help',
+            data: '${csMyidCommandName}',
             enter: true,
           },
         },

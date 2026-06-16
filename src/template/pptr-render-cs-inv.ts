@@ -2,6 +2,7 @@ import { Context } from 'koishi';
 import * as fs from 'fs';
 import * as path from 'path';
 import { LOG_LEVELS } from '../types';
+import { logInfo } from '../logger';
 import type { PuppeteerLifeCycleEvent } from 'puppeteer-core';
 
 const BASE_FONT_STACK =
@@ -28,8 +29,7 @@ export interface CustomFontConfig {
 }
 
 export function buildCustomFontConfig(
-  ctx: Context,
-  fontPath?: string | null,
+  ctx: Context, fontPath?: string | null,
 ): CustomFontConfig | null {
   if (!fontPath || fontPath.trim() === '') return null;
 
@@ -37,9 +37,7 @@ export function buildCustomFontConfig(
     ? fontPath
     : path.resolve(fontPath);
   if (!fs.existsSync(resolvedPath)) {
-    ctx.logger.warn(
-      `[src/template/pptr-render-cs-inv.ts] [warn] ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`,
-    );
+    logInfo(ctx, ctx.config, 'warn', __filename, `📁 ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`);
     return null;
   }
 
@@ -56,17 +54,11 @@ export function buildCustomFontConfig(
       font-style: normal;
     }`;
 
-    ctx.logger.debug(
-      `[src/template/pptr-render-cs-inv.ts] [debug] ✅ 🔤 成功加载自定义字体: ${resolvedPath}`,
-    );
+    logInfo(ctx, ctx.config, 'debug', __filename, `✔️ ⏳ ✅ 🔤 成功加载自定义字体: ${resolvedPath}`);
     return {
-      css,
-      fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`,
-    };
+      css, fontFamily: `'${CUSTOM_FONT_FAMILY}', ${BASE_FONT_STACK}`, };
   } catch (e) {
-    ctx.logger.warn(
-      `[src/template/pptr-render-cs-inv.ts] [warn] ❌ 🔤 加载自定义字体失败: ${e}`,
-    );
+    logInfo(ctx, ctx.config, 'warn', __filename, `⚡ ⏳ ❌ 🔤 加载自定义字体失败: ${e}`);
     return null;
   }
 }
@@ -109,30 +101,7 @@ export interface RenderCsInvImageOptions {
 
 export function generateHtml(options: GenerateHtmlOptions): string {
   const {
-    cardHTML,
-    gridColumns,
-    totalStr,
-    steamId,
-    steamName,
-    playerAvatarUrl,
-    playerLastLogoffTimeStr,
-    darkMode,
-    enableAvatarBackground = false,
-    fontConfig = null,
-    showItemCount = true,
-    itemCountCorner = 'top-right',
-    itemNamePosition = 'top',
-    itemNameBgOpacity = 0.6,
-    itemImageScale = 100,
-    footerCustomText = '',
-    watermarkEnabled = true,
-    watermarkText = 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
-    watermarkFontSize = 16,
-    watermarkAngle = 45,
-    watermarkOpacity = 0.6,
-    watermarkRowGap = 60,
-    watermarkColGap = 80,
-  } = options;
+    cardHTML, gridColumns, totalStr, steamId, steamName, playerAvatarUrl, playerLastLogoffTimeStr, darkMode, enableAvatarBackground = false, fontConfig = null, showItemCount = true, itemCountCorner = 'top-right', itemNamePosition = 'top', itemNameBgOpacity = 0.6, itemImageScale = 100, footerCustomText = '', watermarkEnabled = true, watermarkText = 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork', watermarkFontSize = 16, watermarkAngle = 45, watermarkOpacity = 0.6, watermarkRowGap = 60, watermarkColGap = 80, } = options;
 
   const fontFaceCss = fontConfig?.css || '';
   const fontFamily = fontConfig?.fontFamily || BASE_FONT_STACK;
@@ -154,31 +123,17 @@ export function generateHtml(options: GenerateHtmlOptions): string {
   const PAGE_PADDING = 16;
 
   const cornerPositions: Record<string, string> = {
-    'top-left': 'top: 12px; left: 12px;',
-    'top-right': 'top: 12px; right: 12px;',
-    'bottom-left': 'bottom: 12px; left: 12px;',
-    'bottom-right': 'bottom: 12px; right: 12px;',
-  };
+    'top-left': 'top: 12px; left: 12px;', 'top-right': 'top: 12px; right: 12px;', 'bottom-left': 'bottom: 12px; left: 12px;', 'bottom-right': 'bottom: 12px; right: 12px;', };
   const itemCountPosition =
     cornerPositions[itemCountCorner] || cornerPositions['top-right'];
 
   const namePositionStyles: Record<
-    string,
-    { wrapper: string; justify: string }
+    string, { wrapper: string; justify: string }
   > = {
     top: {
-      wrapper: 'top: 4px; left: 4px; right: 4px;',
-      justify: 'flex-start',
-    },
-    center: {
-      wrapper: 'top: 50%; left: 4px; right: 4px; transform: translateY(-50%);',
-      justify: 'center',
-    },
-    bottom: {
-      wrapper: 'bottom: 4px; left: 4px; right: 4px;',
-      justify: 'flex-end',
-    },
-  };
+      wrapper: 'top: 4px; left: 4px; right: 4px;', justify: 'flex-start', }, center: {
+      wrapper: 'top: 50%; left: 4px; right: 4px; transform: translateY(-50%);', justify: 'center', }, bottom: {
+      wrapper: 'bottom: 4px; left: 4px; right: 4px;', justify: 'flex-end', }, };
   const nameStyle =
     namePositionStyles[itemNamePosition] || namePositionStyles['top'];
 
@@ -478,67 +433,44 @@ export function generateHtml(options: GenerateHtmlOptions): string {
 }
 
 export async function renderCsInvImage(
-  ctx: Context,
-  options: RenderCsInvImageOptions,
+  ctx: Context, options: RenderCsInvImageOptions,
 ): Promise<string> {
   const {
-    html,
-    imageType = 'jpeg',
-    imageQuality = 60,
-    waitUntil = 'domcontentloaded',
-    viewportWidth,
-    viewportHeight,
-    logLevel = 'info',
-  } = options;
+    html, imageType = 'jpeg', imageQuality = 60, waitUntil = 'domcontentloaded', viewportWidth, viewportHeight, logLevel = 'info', } = options;
 
   const page = await ctx.puppeteer.page();
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    ctx.logger.info(
-      '[src/template/pptr-render-cs-inv.ts] [debug] 📄 正在设置页面内容...',
-    );
+    logInfo(ctx, logLevel, 'debug', __filename, '📄 📄 正在设置页面内容...');
   }
 
   await page.setContent(html, { waitUntil });
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    ctx.logger.info(
-      '[src/template/pptr-render-cs-inv.ts] [debug] ⏳ 🖼️ 正在等待图片加载...',
-    );
+    logInfo(ctx, logLevel, 'debug', __filename, '🎯 ⏳ ⏳ 🖼️ 正在等待图片加载...');
   }
 
   try {
     await page.waitForFunction(
       () => {
         const allImages = Array.from(
-          document.querySelectorAll('.item-image, .avatar'),
-        );
+          document.querySelectorAll('.item-image, .avatar'));
         return allImages.every((img) => (img as HTMLImageElement).complete);
-      },
-      { timeout: 15000 },
-    );
+      }, { timeout: 15000 });
   } catch (err) {
-    ctx.logger.warn(
-      '[src/template/pptr-render-cs-inv.ts] [warn] ⏰ 部分图片加载超时，将继续渲染',
-    );
+    logInfo(ctx, logLevel, 'warn', __filename, '🎯 🎨 ⏳ ⏰ 部分图片加载超时，将继续渲染');
   }
 
   await page.setViewport({ width: viewportWidth, height: viewportHeight });
 
   const screenshotOptions: any = {
-    encoding: 'base64',
-    type: imageType,
-    omitBackground: true,
-    fullPage: true,
-  };
+    encoding: 'base64', type: imageType, omitBackground: true, fullPage: true, };
   if (imageType !== 'png') {
     screenshotOptions.quality = imageQuality;
   }
 
   if (LOG_LEVELS[logLevel] >= LOG_LEVELS.debug) {
-    ctx.logger.info(
-      '[src/template/pptr-render-cs-inv.ts] [debug] 📸 正在截取屏幕...',
-    );
+    logInfo(ctx, logLevel, 'debug', __filename, '📸 📸 正在截取屏幕...');
   }
 
   const image = await page.screenshot(screenshotOptions);
