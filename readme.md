@@ -80,6 +80,16 @@
 | `replyToUser` | boolean | `true` | 是否引用回复用户触发的消息 |
 | `promptMode` | `"all"` / `"none"` / `"non-qq"` | `"non-qq"` | 💬 cs-bind 绑定替换确认模式（non-qq=QQ平台自动跳过确认直接替换） |
 
+### 🔐 权限设置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `useKoishiAuthority` | boolean | `true` | 为他人绑定 SteamID 时，允许 Koishi 权限等级 4 及以上用户操作 |
+| `usePluginAdminTable` | boolean | `false` | 为他人绑定 SteamID 时，允许本插件管理员表中的用户操作 |
+| `pluginAdmins` | table | `[]` | 本插件管理员列表，列为 `platform` / `userId` / `enabled` / `note`；`note` 仅用于备注展示，不参与权限判断 |
+
+`useKoishiAuthority` 与 `usePluginAdminTable` 是 **OR 关系**：两者同时启用时，只要 Koishi 4 级权限校验通过，或调用者命中本插件管理员表且 `enabled=true`，就允许为他人绑定 SteamID。两个开关都关闭时，任何人都不能为他人绑定，但自己绑定仍然允许。
+
 ### 🤖 QQ 官方 Bot 平台设置
 
 | 配置项 | 类型 | 默认值 | 说明 |
@@ -184,6 +194,8 @@ cs-inv --no-refresh
 绑定 SteamID 到 Koishi 用户。
 
 **参数优先级：** 消息里第一个 `@` 用户 > 第二参数 `userId` > 当前发送者
+
+自己绑定不需要管理员权限；传入 `userId` 或 `@用户` 给他人绑定时，需要通过权限设置中的管理员校验。默认启用 Koishi 内置权限校验，要求调用者权限等级 4 及以上；如果同时启用本插件管理员表，则两套校验为 OR 关系，任意一个通过即可操作。
 
 如果已有绑定，默认行为是 QQ/QQGuild 平台自动替换，其他平台要求回复 `ok` 或 `cancel` 确认。可通过配置项 `promptMode` 调整。
 

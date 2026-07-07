@@ -72,10 +72,18 @@ export const usage = `
   <li><code>cs-inv -s &lt;steamid&gt;</code>：直接查询指定 SteamID 的库存</li>
   <li><code>cs-inv --refresh</code>：强制刷新数据库缓存后重新拉取库存</li>
   <li><code>cs-inv --no-refresh</code>：强制使用数据库缓存（若存在）</li>
-  <li><code>cs-bind &lt;steamId&gt; [userId]</code>：绑定 SteamID，支持艾特他人绑定</li>
+  <li><code>cs-bind &lt;steamId&gt; [userId]</code>：绑定 SteamID，支持艾特他人绑定；自己绑定无需管理员权限，为他人绑定需要通过权限设置校验</li>
   <li><code>cs-myid</code>：查看自己已绑定的 SteamID</li>
   <li><code>getid &lt;Steam个人资料链接&gt;</code>：从 Steam 主页链接解析 SteamID</li>
   <li>💡 没有 Key 也可以使用 <a href="https://steamid.io" target="_blank">steamid.io</a> 免费查询 SteamID64</li>
+</ul>
+
+<h3>🔐 权限说明</h3>
+<ul>
+  <li>默认启用 Koishi 内置权限校验：为他人绑定 SteamID 需要调用者 Koishi 权限等级 4 及以上。</li>
+  <li>可选启用本插件管理员表 <code>pluginAdmins</code>：命中 <code>platform</code> + <code>userId</code> 且 <code>enabled=true</code> 的用户也可为他人绑定。</li>
+  <li><code>useKoishiAuthority</code> 与 <code>usePluginAdminTable</code> 是 OR 关系：两者同时启用时，任意一个校验通过即可操作。</li>
+  <li>两个管理员校验开关都关闭时，任何人都不能为他人绑定；自己绑定仍然允许。</li>
 </ul>
 
 <h3>🔑 Key 使用建议</h3>

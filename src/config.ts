@@ -49,6 +49,21 @@ export interface Config {
   banAtUserArg: 'none' | 'all' | 'qq';
 
   // ==================================================================
+  // ===== 🔐 权限设置 =====
+  // ==================================================================
+  /** 为他人绑定 SteamID 时是否允许 Koishi 4 级及以上用户操作 */
+  useKoishiAuthority: boolean;
+  /** 为他人绑定 SteamID 时是否允许本插件管理员表用户操作 */
+  usePluginAdminTable: boolean;
+  /** 本插件管理员列表 */
+  pluginAdmins: {
+    platform: string;
+    userId: string;
+    enabled: boolean;
+    note: string;
+  }[];
+
+  // ==================================================================
   // ===== 🤖 QQ 官方 Bot 平台设置 =====
   // ==================================================================
   /** 是否在 QQ 官方 Bot 平台发送图片时附带 Markdown + 按钮消息 */
@@ -237,6 +252,30 @@ export const Config: Schema<Config> = Schema.intersect([
         '👤 cs-inv / cs-bind 指令中 @用户 的禁用范围 <br> <i> 被禁时只能通过传参或自身使用指令 </i>',
       ),
   }).description('📨 通用消息设置'),
+
+  Schema.object({
+    useKoishiAuthority: Schema.boolean()
+      .default(true)
+      .description('🔐 为他人绑定 SteamID 时，允许 Koishi 权限等级 4 及以上用户操作'),
+    usePluginAdminTable: Schema.boolean()
+      .default(false)
+      .description('📋 为他人绑定 SteamID 时，允许本插件管理员表中的用户操作<br><i>与 Koishi 权限校验为 OR 关系：两者同时启用时，只要任意一个校验通过即可操作。</i>'),
+    pluginAdmins: Schema.array(Schema.object({
+      platform: Schema.string()
+        .description('🏷️ 平台名称，例如 qq、qqguild、onebot'),
+      userId: Schema.string()
+        .description('🆔 用户 ID'),
+      enabled: Schema.boolean()
+        .default(true)
+        .description('✅ 是否启用'),
+      note: Schema.string()
+        .default('')
+        .description('📝 备注，仅用于配置界面查看，不参与任何权限判断或业务逻辑'),
+    }))
+      .role('table')
+      .default([])
+      .description('👤 本插件管理员列表<br><i>目前用于允许为他人绑定 SteamID；仅在「启用本插件管理员表」开启时生效。</i>'),
+  }).description('🔐 权限设置'),
 
   Schema.object({
     enableQQMarkdown: Schema.boolean()

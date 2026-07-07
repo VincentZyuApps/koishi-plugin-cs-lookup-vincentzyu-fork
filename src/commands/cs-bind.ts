@@ -4,6 +4,31 @@ import { replyWithMarkdownKeyboard } from '../qq';
 import { logInfo } from '../logger';
 import { UserIdSource } from '../types';
 
+async function canBindSteamIdForOthers(ctx: Context, config: any, session: any) {
+  const useKoishiAuthority = config.useKoishiAuthority !== false;
+  const usePluginAdminTable = config.usePluginAdminTable === true;
+  let hasAnyCheck = false;
+  let allowed = false;
+
+  if (useKoishiAuthority) {
+    hasAnyCheck = true;
+    await session.observeUser?.(['authority']);
+    allowed ||= await ctx.permissions.test('authority:4', session);
+  }
+
+  if (usePluginAdminTable) {
+    hasAnyCheck = true;
+    const pluginAdmins = Array.isArray(config.pluginAdmins) ? config.pluginAdmins : [];
+    allowed ||= pluginAdmins.some((admin) =>
+      admin?.enabled !== false &&
+      admin?.platform?.trim() === session.platform &&
+      admin?.userId?.trim() === session.userId
+    );
+  }
+
+  return { hasAnyCheck, allowed };
+}
+
 export async function bind(ctx: Context, config: any) {
   ctx
     .command(
@@ -43,6 +68,25 @@ export async function bind(ctx: Context, config: any) {
         userIdSource = UserIdSource.SESSION;
       }
       logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
+
+      if (USERID !== session.userId) {
+        const { hasAnyCheck, allowed } = await canBindSteamIdForOthers(ctx, config, session);
+        logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `🔐 为他人绑定 SteamID 权限校验: hasAnyCheck=${hasAnyCheck}, allowed=${allowed}, operator=${session.userId}, target=${USERID}`);
+
+        if (!hasAnyCheck) {
+          const _r = await replyWithMarkdownKeyboard(
+            session, ctx, config, '绑定steamid操作',
+            '❌ 未启用任何管理员校验方式，无法为他人绑定 SteamID');
+          if (_r !== undefined) return _r;
+        }
+
+        if (!allowed) {
+          const _r = await replyWithMarkdownKeyboard(
+            session, ctx, config, '绑定steamid操作',
+            '❌ 权限不足：为他人绑定 SteamID 需要 Koishi 4 级权限，或位于本插件管理员表中');
+          if (_r !== undefined) return _r;
+        }
+      }
 
       const userObj =
         typeof session.bot.getUser === 'function'

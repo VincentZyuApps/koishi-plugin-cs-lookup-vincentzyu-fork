@@ -32,7 +32,7 @@ export function startRestServer(ctx: Context, config: any) {
     logger: LOG_LEVELS[config.logLevel] >= LOG_LEVELS.info || false, });
 
   // 注册 CORS 中间件
-  fastify.register(cors, {
+  fastify.register(cors as any, {
     origin: true, // 允许所有来源
     methods: ['GET', 'POST'], allowedHeaders: ['X-Secret', 'Content-Type'], });
 
