@@ -1,12 +1,17 @@
 const pkg = require('../package.json');
 
+const KOISHI_LOGO_BASE64 = 'data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAABU0lEQVR42p2UQSsFYRSGnxnqLuytKWKpKFkQNsS%2FsOHPWPADLCmxU5S7UzYWNrJR7lYiRF2FeWzOMKZ7mXHqNNP5vvP2nu%2B850CY2lP4X1K31ZbaDm%2BpO%2Bpyp5wfAXVEPfRvO1JHf4AVQGbUh7j4EZ4VkrNCXPVRnf3CUBN1SH2KC28VGOV3ntRhNclZHdcAKYM11QR1oVBOXctzFlNgBTC8qmXxPQEegbVeYApIgJT6tg%2F0AdMp0B%2FBpCabK2AAmAAa%2F2GRBft1oBFPkqTAba7LCiAfQC9wClwAY1HJHepuiO29Yrsf1Dn1uiDU3RTYCtTkl1Leg8k9MB4NGgReI28rV3azgyCz0og01Xl1Uz1QX8uCTELm3UbkTF1VJ9Wr0tn3iBSGdjYG0XivE3VN3VD31PM4a3cc2tIGGI0VkTO7rLxGuiy25ejmjfqsvkSXui62TxaK03td4FXTAAAAAElFTkSuQmCC';
+
 export const usage = `
 <h1>Koishi 插件：CS2 库存查询 cs-lookup-vincentzyu-fork</h1>
 <h2>🎯 插件版本：v${pkg.version}</h2>
 
 <p>
   <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup-vincentzyu-fork" target="_blank">
-    <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup-vincentzyu-fork?style=flat-square" alt="npm version">
+    <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup-vincentzyu-fork?style=flat-square&logo=npm" alt="npm version">
+  </a>
+  <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup-vincentzyu-fork" target="_blank">
+    <img src="https://img.shields.io/npm/dm/koishi-plugin-cs-lookup-vincentzyu-fork?style=flat-square&logo=npm" alt="npm downloads">
   </a>
   <a href="https://github.com/VincentZyu233/koishi-plugin-cs-lookup-vincentzyu-fork" target="_blank">
     <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
@@ -18,7 +23,7 @@ export const usage = `
     <img src="https://img.shields.io/badge/QQ群-957500313-1AAD19?style=flat-square" alt="QQ群">
   </a>
   <a href="https://forum.koishi.xyz/t/topic/12558" target="_blank">
-    <img src="https://img.shields.io/badge/Koishi%20Forum-12558-5546A3?style=for-the-badge&logo=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ff%2Ff3%2FKoishi.js_Logo.png&logoColor=white" alt="Forum">
+    <img src="https://img.shields.io/badge/Koishi%20Forum-12558-5546A3?style=for-the-badge&logo=${KOISHI_LOGO_BASE64}&logoColor=white" alt="Koishi Forum">
   </a>
 </p>
 
@@ -31,7 +36,7 @@ export const usage = `
       <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="Upstream GitHub">
     </a>
     <a href="https://www.npmjs.com/package/koishi-plugin-cs-lookup" target="_blank">
-      <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup?style=flat-square" alt="Upstream npm">
+      <img src="https://img.shields.io/npm/v/koishi-plugin-cs-lookup?style=flat-square&logo=npm" alt="Upstream npm">
     </a>
     <a href="https://ko-fi.com/itzdrli" target="_blank">
       <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi">
