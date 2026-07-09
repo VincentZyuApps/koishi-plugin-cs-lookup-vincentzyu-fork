@@ -9,6 +9,9 @@ import {
   buildCustomFontConfig, generateHtml, renderCsInvImage,
 } from '../template/pptr-render-cs-inv';
 import { replyWithMarkdownKeyboard } from '../qq';
+import { checkAndDownloadFonts } from '../font';
+
+const PLUGIN_NAME = 'cs-lookup-vincentzyu-fork';
 
 export function isOnlyDigits(str: string): boolean {
   return /^\d+$/.test(str);
@@ -213,6 +216,11 @@ export function inv(ctx: Context, config: any) {
 
       if (!isOnlyDigits(STEAMID)) {
         return `${replyPrefix}❌ 无效steamID, 若不知道steamID请使用指令 \`${config.getidCommandName} Steam个人资料页链接\` 获取`;
+      }
+
+      const fontsReady = await checkAndDownloadFonts(ctx, PLUGIN_NAME);
+      if (!fontsReady) {
+        logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', '⚠️ 默认 LXGW 字体下载或校验失败，将使用系统字体栈继续渲染');
       }
 
       const steamWebApiUrl = `https://www.steamwebapi.com/steam/api/profile?key=${config.steamWebApiKey}&steam_id=${STEAMID}`;

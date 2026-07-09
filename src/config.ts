@@ -6,6 +6,7 @@ import {
   type LogLevel,
 } from './types';
 import { stringifyCompact, DEFAULT_KEYBOARD_ROWS } from './qq';
+import { DEFAULT_LXGW_WENKAI_PATH } from './font';
 
 export interface Config {
   // ==================================================================
@@ -383,9 +384,9 @@ export const Config: Schema<Config> = Schema.intersect([
       .description('🖼️ 饰品图片大小缩放百分比 (50-300%，默认180%)'),
     customFontPath: Schema.string()
       .role('textarea', { rows: [2, 5] })
-      .default('')
+      .default(DEFAULT_LXGW_WENKAI_PATH)
       .description(
-        '🔤 自定义字体文件绝对路径 (如 C:/Fonts/my.ttf，留空使用默认字体)',
+        '🔤 自定义字体文件绝对路径<br><i>默认展示 process.cwd()/data/fonts/LXGWWenKaiMono-Regular.ttf；运行时自动映射到 ctx.baseDir/data/fonts/LXGWWenKaiMono-Regular.ttf。</i>',
       ),
     footerCustomText: Schema.string()
       .default('📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork')

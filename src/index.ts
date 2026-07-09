@@ -7,13 +7,15 @@ import { startRestServer } from './rest-server';
 import type { Config as CsLookupConfig } from './config';
 import { Config as ConfigSchema } from './config';
 import { logInfo } from './logger';
+import { checkAndDownloadFonts } from './font';
 export { usage } from './usage';
 
 export const name = 'cs-lookup-vincentzyu-fork';
+const PLUGIN_NAME = name;
 export const Config = ConfigSchema;
 
 export const inject = {
-  required: ['puppeteer', 'database'],
+  required: ['puppeteer', 'database', 'http'],
 };
 
 declare module 'koishi' {
@@ -45,6 +47,10 @@ export interface CsGetidCache {
 }
 
 export function apply(ctx: Context, config: CsLookupConfig) {
+  checkAndDownloadFonts(ctx, PLUGIN_NAME).catch((error) => {
+    ctx.logger.warn(`⚠️ apply 阶段默认字体预检查失败，将在指令执行时重试: ${error?.message || error}`);
+  });
+
   ctx.model.extend(
     'cs_lookup_vincentzyu_fork',
     {

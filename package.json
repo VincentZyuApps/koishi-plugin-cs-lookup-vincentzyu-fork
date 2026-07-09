@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-cs-lookup-vincentzyu-fork",
-  "description": "🎮 查询CS2的Steam库存并渲染为图片，🔗 支持SteamID 绑定与解析，🌐 可配代理与双API自动回退，💾 内置图片缓存，🎨 支持深色主题/水印/自定义字体等丰富渲染选项",
-  "version": "1.4.4-beta.7+20260707",
+  "description": "🎮 查询Steam API 获取玩家的CS2库存并渲染为图片，🔗 支持SteamID 绑定与解析，🌐 可配代理与双API自动回退，💾 内置图片缓存，🎨 支持深色主题/水印/自定义字体等丰富渲染选项",
+  "version": "1.4.5-beta.8+20260709",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/itzdrli/koishi-plugin-cs-lookup.git"

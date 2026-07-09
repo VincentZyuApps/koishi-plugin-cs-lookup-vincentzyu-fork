@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LOG_LEVELS } from '../types';
 import { logInfo } from '../logger';
+import { resolveRuntimeFontPath } from '../font';
 import type { PuppeteerLifeCycleEvent } from 'puppeteer-core';
 
 const BASE_FONT_STACK =
@@ -31,11 +32,12 @@ export interface CustomFontConfig {
 export function buildCustomFontConfig(
   ctx: Context, fontPath?: string | null,
 ): CustomFontConfig | null {
-  if (!fontPath || fontPath.trim() === '') return null;
+  const runtimeFontPath = resolveRuntimeFontPath(ctx, fontPath || '');
+  if (!runtimeFontPath || runtimeFontPath.trim() === '') return null;
 
-  const resolvedPath = path.isAbsolute(fontPath)
-    ? fontPath
-    : path.resolve(fontPath);
+  const resolvedPath = path.isAbsolute(runtimeFontPath)
+    ? runtimeFontPath
+    : path.resolve(runtimeFontPath);
   if (!fs.existsSync(resolvedPath)) {
     logInfo(ctx, ctx.config, 'warn', 'src/template/pptr-render-cs-inv.ts', `📁 ⚠️ 🔤 自定义字体文件不存在: ${resolvedPath}`);
     return null;
