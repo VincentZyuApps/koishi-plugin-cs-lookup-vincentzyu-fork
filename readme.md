@@ -43,7 +43,7 @@
 | Key | 来源 | 费用 | 用途 |
 |-----|------|------|------|
 | `officialSteamApiKey` | https://steamcommunity.com/dev/apikey | 免费 | **必需** — `cs-inv` 获取玩家信息 |
-| `steamWebApiKey` | https://www.steamwebapi.com | 付费 | **可选** — `getid` 自动解析链接用 |
+| `steamWebApiKey` | https://www.steamwebapi.com | 付费 | **可选** — `steam-getid` 自动解析链接用 |
 
 > 💡 其实查 SteamID 是**一次性操作**，用 [steamid.io](https://steamid.io) 免费查一次就行，  
 > 不一定非要配 `steamWebApiKey`：打开 `https://steamid.io` → 粘贴个人资料链接 → 复制 SteamID64
@@ -65,20 +65,20 @@
 | `enableInvDbCache` | boolean | `false` | cs-inv 是否默认使用数据库缓存库存 JSON（true=有缓存直接用，false=每次实时拉取） |
 | `preferOfficialSteamApi` | boolean | `true` | 优先使用 Steam 官方 API（关闭则优先使用 steamwebapi.com） |
 | `officialSteamApiKey` | string | `""` | Steam 官方免费 Key，从 https://steamcommunity.com/dev/apikey 获取 |
-| `steamWebApiKey` | string | `""` | steamwebapi.com 付费 Key（配额有限），getid 功能依赖此 Key |
-| `enableGetidCache` | boolean | `true` | 💾 是否缓存 getid 查询结果到数据库（减少 API 调用次数） |
-| `getidCacheDays` | number (1-365) | `30` | 📅 getid 缓存有效天数 |
+| `steamWebApiKey` | string | `""` | steamwebapi.com 付费 Key（配额有限），steam-getid 功能依赖此 Key |
+| `enableSteamGetIdDbCache` | boolean | `true` | 💾 是否缓存 steam-getid 查询结果到数据库（减少 API 调用次数） |
+| `steamGetIdCacheDays` | number (1-365) | `30` | 📅 steam-getid 缓存有效天数 |
 
 ### 📨 通用消息设置
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `csInvCommandName` | string | `"cs-inv"` | 🎒 查询库存指令名称 |
-| `csBindCommandName` | string | `"cs-bind"` | 🔗 绑定 SteamID 指令名称 |
-| `csMyidCommandName` | string | `"cs-myid"` | 🆔 查询已绑定 SteamID 指令名称 |
-| `getidCommandName` | string | `"getid"` | 🔍 解析 SteamID 指令名称 |
+| `steamBindCommandName` | string | `"绑定steamid"` | 🔗 绑定 SteamID 指令名称，别名 `steam-bind` |
+| `steamMyIdCommandName` | string | `"查询我绑定的steamid"` | 🆔 查询已绑定 SteamID 指令名称，别名 `steam-myid` |
+| `steamGetIdCommandName` | string | `"获取steamid"` | 🔍 解析 SteamID 指令名称，别名 `steam-getid` |
 | `replyToUser` | boolean | `true` | 是否引用回复用户触发的消息 |
-| `promptMode` | `"all"` / `"none"` / `"non-qq"` | `"non-qq"` | 💬 cs-bind 绑定替换确认模式（non-qq=QQ平台自动跳过确认直接替换） |
+| `promptMode` | `"all"` / `"none"` / `"non-qq"` | `"non-qq"` | 💬 steam-bind 绑定替换确认模式（non-qq=QQ平台自动跳过确认直接替换） |
 
 ### 🔐 权限设置
 
@@ -95,7 +95,7 @@
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `enableQQMarkdown` | boolean | `true` | 💬 在 QQ 官方 Bot 平台发送图片时附带 Markdown + 按钮消息 |
-| `qqMarkdownKeyboardJson` | string | JSON | 📋 QQ Markdown 按钮 JSON 配置<br>支持变量：`${csInvCommandName}` `${csBindCommandName}` `${csMyidCommandName}` `${getidCommandName}` `${userId}` |
+| `qqMarkdownKeyboardJson` | string | JSON | 📋 QQ Markdown 按钮 JSON 配置<br>支持变量：`${csInvCommandName}` `${steamBindCommandName}` `${steamMyIdCommandName}` `${steamGetIdCommandName}` `${userId}` |
 
 ### 🎨 渲染设置（puppeteer 网页截图）
 
@@ -189,7 +189,7 @@ cs-inv --refresh
 cs-inv --no-refresh
 ```
 
-### 🔗 `cs-bind <steamId> [userId]`
+### 🔗 `绑定steamid <steamId> [userId]` / `steam-bind <steamId> [userId]`
 
 绑定 SteamID 到 Koishi 用户。
 
@@ -201,16 +201,16 @@ cs-inv --no-refresh
 
 **示例：**
 ```
-cs-bind 7656119xxxxxxxxxx
-cs-bind 7656119xxxxxxxxxx @某人
-cs-bind 7656119xxxxxxxxxx 123456789
+绑定steamid 7656119xxxxxxxxxx
+steam-bind 7656119xxxxxxxxxx @某人
+steam-bind 7656119xxxxxxxxxx 123456789
 ```
 
-### 🆔 `cs-myid`
+### 🆔 `查询我绑定的steamid` / `steam-myid`
 
 查看自己当前绑定的 SteamID。
 
-### 🔍 `getid <Steam个人资料链接>
+### 🔍 `获取steamid <Steam个人资料链接>` / `steam-getid <Steam个人资料链接>`
 
 通过 Steam 主页链接解析 SteamID。该指令依赖 `steamWebApiKey`。
 
@@ -219,8 +219,8 @@ cs-bind 7656119xxxxxxxxxx 123456789
 
 **示例：**
 ```
-getid https://steamcommunity.com/id/VincentZyu/
-getid https://steamcommunity.com/profiles/76561199321190157/
+获取steamid https://steamcommunity.com/id/VincentZyu/
+steam-getid https://steamcommunity.com/profiles/76561199321190157/
 ```
 
 ---
@@ -231,7 +231,7 @@ getid https://steamcommunity.com/profiles/76561199321190157/
 |------|------|
 | 数据库表 `cs_lookup_vincentzyu_fork` | Koishi 用户与 SteamID 的绑定关系 |
 | 数据库表 `cs_inv_cache_vincentzyu_fork` | Steam 库存接口返回的 JSON 缓存 |
-| 数据库表 `cs_getid_cache_vincentzyu_fork` | Steam 个人主页 URL → SteamID 的缓存 |
+| 数据库表 `cs_steam_getid_cache_vincentzyu_fork` | Steam 个人主页 URL → SteamID 的缓存 |
 | `cache/cs_inv_image/` | 饰品图片 Base64 磁盘缓存（默认路径，可配置） |
 | `cache/cs_inv_data/res.json` | `verboseFileLog` 开启时输出的完整库存 JSON（默认路径，可配置） |
 

@@ -22,10 +22,10 @@ export interface Config {
   officialSteamApiKey?: string;
   /** steamwebapi.com 付费 API Key */
   steamWebApiKey?: string;
-  /** 是否缓存 getid 查询结果到数据库 */
-  enableGetidDbCache: boolean;
-  /** getid 缓存有效天数 */
-  getidCacheDays: number;
+  /** 是否缓存 steam-getid 查询结果到数据库 */
+  enableSteamGetIdDbCache: boolean;
+  /** steam-getid 缓存有效天数 */
+  steamGetIdCacheDays: number;
 
   // ==================================================================
   // ===== 📝 指令名设置 =====
@@ -33,11 +33,11 @@ export interface Config {
   /** 查询库存指令名称 */
   csInvCommandName: string;
   /** 绑定 SteamID 指令名称 */
-  csBindCommandName: string;
+  steamBindCommandName: string;
   /** 查询已绑定 SteamID 指令名称 */
-  csMyidCommandName: string;
+  steamMyIdCommandName: string;
   /** 解析 SteamID 指令名称 */
-  getidCommandName: string;
+  steamGetIdCommandName: string;
 
   // ==================================================================
   // ===== 📨 通用消息设置 =====
@@ -46,7 +46,7 @@ export interface Config {
   replyToUser: boolean;
   /** 💬 绑定替换时的 prompt 交互确认模式 */
   promptMode: 'all' | 'none' | 'non-qq';
-  /** 👤 cs-inv / cs-bind 指令中 @用户 的禁用范围 */
+  /** 👤 cs-inv / steam-bind 指令中 @用户 的禁用范围 */
   banAtUserArg: 'none' | 'all' | 'qq';
 
   // ==================================================================
@@ -202,30 +202,30 @@ export const Config: Schema<Config> = Schema.intersect([
       .description(
         '🔑 steamwebapi.com 的 API Key <br> <i> （付费API，但是有免费配额，但是免费配额有限，作为官方 API 的回退/备用）</i>',
       ),
-    enableGetidDbCache: Schema.boolean()
+    enableSteamGetIdDbCache: Schema.boolean()
       .default(true)
-      .description('💾 是否缓存 getid 查询结果到数据库 <br> <i> （减少 steamwebapi.com 的 API 调用次数. 建议保持打开，steamwebapi.com API的免费配额有限）</i>'),
-    getidCacheDays: Schema.number()
+      .description('💾 是否缓存 steam-getid 查询结果到数据库 <br> <i> （减少 steamwebapi.com 的 API 调用次数. 建议保持打开，steamwebapi.com API的免费配额有限）</i>'),
+    steamGetIdCacheDays: Schema.number()
       .default(30)
       .min(1)
       .max(365)
       .step(1)
-      .description('📅 getid 缓存有效天数'),
+      .description('📅 steam-getid 缓存有效天数'),
   }).description('⚙️ 基础设置'),
 
   Schema.object({
     csInvCommandName: Schema.string()
       .default('查cs库存')
       .description('🎒 cs-inv的指令名称'),
-    csBindCommandName: Schema.string()
+    steamBindCommandName: Schema.string()
       .default('绑定steamid')
-      .description('🔗 cs-bind的指令名称'),
-    csMyidCommandName: Schema.string()
+      .description('🔗 steam-bind 的指令名称'),
+    steamMyIdCommandName: Schema.string()
       .default('查询我绑定的steamid')
-      .description('🆔 cs-myid 的指令名称'),
-    getidCommandName: Schema.string()
+      .description('🆔 steam-myid 的指令名称'),
+    steamGetIdCommandName: Schema.string()
       .default('获取steamid')
-      .description('🔍 getid 的指令名称'),
+      .description('🔍 steam-getid 的指令名称'),
   }).description('📝 指令名设置'),
 
   Schema.object({
@@ -242,7 +242,7 @@ export const Config: Schema<Config> = Schema.intersect([
       .default('non-qq')
       .role('radio')
       .description(
-        '💬 cs-bind指令 绑定steamid替换时的 prompt 交互确认模式 <br> <i> ⚠️注意不影响arg传参，所有平台都支持arg传参 </i>',
+        '💬 steam-bind 指令绑定 steamid 替换时的 prompt 交互确认模式 <br> <i> ⚠️注意不影响 arg 传参，所有平台都支持 arg 传参 </i>',
       ),
     banAtUserArg: Schema.union([
       Schema.const('none').description('🌐 全部平台都允许解析 @用户'),
@@ -250,7 +250,7 @@ export const Config: Schema<Config> = Schema.intersect([
       Schema.const('qq').description('💬 仅 qq 平台禁止解析 @用户（默认）'),
     ]).default('qq').role('radio')
       .description(
-        '👤 cs-inv / cs-bind 指令中 @用户 的禁用范围 <br> <i> 被禁时只能通过传参或自身使用指令 </i>',
+        '👤 cs-inv / steam-bind 指令中 @用户 的禁用范围 <br> <i> 被禁时只能通过传参或自身使用指令 </i>',
       ),
   }).description('📨 通用消息设置'),
 
@@ -286,7 +286,7 @@ export const Config: Schema<Config> = Schema.intersect([
       .role('textarea', { rows: [5, 10] })
       .default(stringifyCompact(DEFAULT_KEYBOARD_ROWS))
       .description(
-        '📋 QQ Markdown 按钮 JSON 配置<br><em>支持变量: <code>${csInvCommandName}</code> <code>${csBindCommandName}</code> <code>${csMyidCommandName}</code> <code>${getidCommandName}</code> <code>${userId}</code></em>',
+        '📋 QQ Markdown 按钮 JSON 配置<br><em>支持变量: <code>${csInvCommandName}</code> <code>${steamBindCommandName}</code> <code>${steamMyIdCommandName}</code> <code>${steamGetIdCommandName}</code> <code>${userId}</code></em>',
       ),
   }).description('🤖 QQ 官方 Bot 平台设置'),
 

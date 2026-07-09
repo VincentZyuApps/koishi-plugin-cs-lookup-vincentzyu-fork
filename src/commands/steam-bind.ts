@@ -29,20 +29,20 @@ async function canBindSteamIdForOthers(ctx: Context, config: any, session: any) 
   return { hasAnyCheck, allowed };
 }
 
-export async function bind(ctx: Context, config: any) {
+export async function registerSteamBindCommand(ctx: Context, config: any) {
   ctx
     .command(
-      `${config.csBindCommandName} <steamId:string> [userId:string]`, '🔗 绑定 SteamId 到 Koishi 用户\n' + 
+      `${config.steamBindCommandName} <steamId:string> [userId:string]`, '🔗 绑定 SteamId 到 Koishi 用户\n' + 
       '\t 💡 提示：打开 `https://steamid.io` → 粘贴个人资料链接 → 复制 SteamID64 🔎' +
-      '\t 📌 参数1 必填: steamId 纯数字, 用 getid 获取\n' + 
+      '\t 📌 参数1 必填: steamId 纯数字, 用 steam-getid 获取\n' + 
       '\t 👤 参数2 可选: userId/@用户, 为他人绑定, 默认自己' +
       '', { authority: 0 }, )
-    .alias('cs-bind')
+    .alias('steam-bind')
     .action(async ({ session }, arg1_steamId, arg2_userId) => {
-      logInfo(ctx, config, 'debug', 'src/commands/cs-bind.ts', `🕵️‍♂️ 是否传入arg2_userId参数? ${arg2_userId ? '✅✅✅是' : '❌❌❌否'}`);
+      logInfo(ctx, config, 'debug', 'src/commands/steam-bind.ts', `🕵️‍♂️ 是否传入arg2_userId参数? ${arg2_userId ? '✅✅✅是' : '❌❌❌否'}`);
 
       const replyPrefix = config.replyToUser ? h.quote(session.messageId) : '';
-      logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `📥 arg1_steamId = ${arg1_steamId}, arg2_userId = ${arg2_userId}`);
+      logInfo(ctx, config, 'info', 'src/commands/steam-bind.ts', `📥 arg1_steamId = ${arg1_steamId}, arg2_userId = ${arg2_userId}`);
 
       const isAtUserBanned =
         config.banAtUserArg === 'all' ||
@@ -67,11 +67,11 @@ export async function bind(ctx: Context, config: any) {
         USERID = session.userId;
         userIdSource = UserIdSource.SESSION;
       }
-      logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
+      logInfo(ctx, config, 'info', 'src/commands/steam-bind.ts', `👥 👤 USERID 来源: ${userIdSource} (value=${USERID})`);
 
       if (USERID !== session.userId) {
         const { hasAnyCheck, allowed } = await canBindSteamIdForOthers(ctx, config, session);
-        logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `🔐 为他人绑定 SteamID 权限校验: hasAnyCheck=${hasAnyCheck}, allowed=${allowed}, operator=${session.userId}, target=${USERID}`);
+        logInfo(ctx, config, 'info', 'src/commands/steam-bind.ts', `🔐 为他人绑定 SteamID 权限校验: hasAnyCheck=${hasAnyCheck}, allowed=${allowed}, operator=${session.userId}, target=${USERID}`);
 
         if (!hasAnyCheck) {
           const _r = await replyWithMarkdownKeyboard(
@@ -95,11 +95,11 @@ export async function bind(ctx: Context, config: any) {
               .catch(() => ({ name: session.username || USERID }))
           : { name: session.username || USERID };
 
-      logInfo(ctx, config, 'info', 'src/commands/cs-bind.ts', `🔍 👤 STEAMID = ${STEAMID}, USERID = ${USERID}`);
+      logInfo(ctx, config, 'info', 'src/commands/steam-bind.ts', `🔍 👤 STEAMID = ${STEAMID}, USERID = ${USERID}`);
 
       if (!isOnlyDigits(STEAMID)) {
         const _r = await replyWithMarkdownKeyboard(
-          session, ctx, config, '绑定steamid操作', `⚠️ 清提供正确的SteamID(必须是纯数字), 或者使用 ${config.getidCommandName} 命令获取 SteamID`);
+          session, ctx, config, '绑定steamid操作', `⚠️ 清提供正确的SteamID(必须是纯数字), 或者使用 ${config.steamGetIdCommandName} 命令获取 SteamID`);
         if (_r !== undefined) return _r;
       }
 

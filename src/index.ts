@@ -1,9 +1,9 @@
 import { Context } from 'koishi';
 import { inv } from './commands/cs-inv';
-import { apply as getId } from './commands/getid';
-import { bind } from './commands/cs-bind';
-import { myid } from './commands/cs-myid';
-import { startRestServer } from './rest-server';
+import { registerSteamGetIdCommand } from './commands/steam-getid';
+import { registerSteamBindCommand } from './commands/steam-bind';
+import { registerSteamMyIdCommand } from './commands/steam-myid';
+import { startRestServer } from './server';
 import type { Config as CsLookupConfig } from './config';
 import { Config as ConfigSchema } from './config';
 import { logInfo } from './logger';
@@ -22,7 +22,7 @@ declare module 'koishi' {
   interface Tables {
     cs_lookup_vincentzyu_fork: CsLookup;
     cs_inv_cache_vincentzyu_fork: CsInvCache;
-    cs_getid_cache_vincentzyu_fork: CsGetidCache;
+    cs_steam_getid_cache_vincentzyu_fork: CsSteamGetIdCache;
   }
 }
 
@@ -39,7 +39,7 @@ export interface CsInvCache {
   cached_at: number;
 }
 
-export interface CsGetidCache {
+export interface CsSteamGetIdCache {
   url: string;
   steamId: string;
   personaName: string;
@@ -71,7 +71,7 @@ export function apply(ctx: Context, config: CsLookupConfig) {
     { primary: 'steamid' },
   );
   ctx.model.extend(
-    'cs_getid_cache_vincentzyu_fork',
+    'cs_steam_getid_cache_vincentzyu_fork',
     {
       url: 'string',
       steamId: 'string',
@@ -81,9 +81,9 @@ export function apply(ctx: Context, config: CsLookupConfig) {
     { primary: 'url' },
   );
   inv(ctx, config);
-  getId(ctx, config);
-  bind(ctx, config);
-  myid(ctx, config);
+  registerSteamGetIdCommand(ctx, config);
+  registerSteamBindCommand(ctx, config);
+  registerSteamMyIdCommand(ctx, config);
 
   // 启动 REST 服务器
   let restServer;

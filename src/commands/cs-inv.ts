@@ -10,6 +10,11 @@ import {
 } from '../template/pptr-render-cs-inv';
 import { replyWithMarkdownKeyboard } from '../qq';
 import { checkAndDownloadFonts } from '../font';
+import {
+  describeInventoryError,
+  formatInventoryErrorHtml,
+  formatInventoryErrorLog,
+} from '../hint';
 
 const PLUGIN_NAME = 'cs-lookup-vincentzyu-fork';
 
@@ -202,7 +207,7 @@ export function inv(ctx: Context, config: any) {
           STEAMID = res[0].steamId;
           logInfo(ctx, config, 'info', 'src/commands/cs-inv.ts', `🗄️ ✅ 从数据库查询到 steamid: ${STEAMID}`);
         } else {
-          const noSteamIdMsg = `⚠️ 请提供 steamID 或者使用 \`${config.getidCommandName}\` 命令获取或者使用 \`${config.csBindCommandName} <steamID>\` 进行绑定\n(查询的用户: ${USERID})`;
+          const noSteamIdMsg = `⚠️ 请提供 steamID 或者使用 \`${config.steamGetIdCommandName}\` 命令获取或者使用 \`${config.steamBindCommandName} <steamID>\` 进行绑定\n(查询的用户: ${USERID})`;
 
           return await replyWithMarkdownKeyboard(
             session, ctx, config, '⚠️ 未绑定 SteamID', noSteamIdMsg);
@@ -215,7 +220,7 @@ export function inv(ctx: Context, config: any) {
         `${replyPrefix}🔄 正在获取 Steam 库存 🖼️ 渲染图片中..... \n\t 🔍 查询 SteamId = ${STEAMID}`);
 
       if (!isOnlyDigits(STEAMID)) {
-        return `${replyPrefix}❌ 无效steamID, 若不知道steamID请使用指令 \`${config.getidCommandName} Steam个人资料页链接\` 获取`;
+        return `${replyPrefix}❌ 无效steamID, 若不知道steamID请使用指令 \`${config.steamGetIdCommandName} Steam个人资料页链接\` 获取`;
       }
 
       const fontsReady = await checkAndDownloadFonts(ctx, PLUGIN_NAME);
@@ -478,20 +483,13 @@ export function inv(ctx: Context, config: any) {
         }
       } catch (e) {
         logInfo(ctx, config, 'error', 'src/commands/cs-inv.ts', `⚡ ❌ 💥 发生错误: ${e.stack || e}`);
+        const inventoryError = describeInventoryError(e);
+        logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `🧭 库存查询失败说明: ${formatInventoryErrorLog(inventoryError)}`);
         let cardHtml = '';
 
-        let errorMessage = '发生未知错误';
-        if (e.response && e.response.data && e.response.data.detail) {
-          const detail = e.response.data.detail;
-          if (detail.includes('Unauthorized')) {
-            errorMessage = `\n\t获取CS2库存失败，可能是对方未公开库存。`;
-          }
-        }
-        errorMessage += ` err = ${e.message || e}`;
-
         cardHtml = `
-            <div class="empty-message">
-                ❌ ${errorMessage}
+            <div class="empty-message" style="text-align: left; line-height: 1.65;">
+                ${formatInventoryErrorHtml(inventoryError)}
             </div>
         `;
 
@@ -519,7 +517,7 @@ export function inv(ctx: Context, config: any) {
             config.watermarkText ||
             'Powered by koishi-plugin-cs-lookup-vincentzyu-fork', watermarkFontSize: config.watermarkFontSize ?? 16, watermarkAngle: config.watermarkAngle ?? 45, watermarkOpacity: config.watermarkOpacity ?? 0.6, watermarkRowGap: config.watermarkRowGap ?? 60, watermarkColGap: config.watermarkColGap ?? 80, });
         const invImageBase64 = await renderCsInvImage(ctx, {
-          html: invHtml, imageType: config.imageType || 'jpeg', imageQuality: config.imageQuality || 60, waitUntil: config.waitUntil || 'domcontentloaded', viewportWidth: 1666, viewportHeight: 500, logLevel: 'silent', });
+          html: invHtml, imageType: config.imageType || 'jpeg', imageQuality: config.imageQuality || 60, waitUntil: config.waitUntil || 'domcontentloaded', viewportWidth: 1666, viewportHeight: 720, logLevel: 'silent', });
         const replyPrefixErr = config.replyToUser
           ? h.quote(session.messageId)
           : '';

@@ -18,7 +18,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${csBindCommandName} --help',
+            data: '${steamBindCommandName} --help',
             enter: true,
           },
         },
@@ -31,7 +31,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${csMyidCommandName}',
+            data: '${steamMyIdCommandName}',
             enter: true,
           },
         },
@@ -40,7 +40,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
           action: {
             type: 2,
             permission: { type: 2 },
-            data: '${getidCommandName} --help',
+            data: '${steamGetIdCommandName} --help',
             enter: true,
           },
         },
@@ -52,9 +52,9 @@ export const DEFAULT_KEYBOARD_ROWS = {
 export function buildQueryKeyboard(
   cmds: {
     csInvCommandName: string;
-    csBindCommandName: string;
-    csMyidCommandName: string;
-    getidCommandName: string;
+    steamBindCommandName: string;
+    steamMyIdCommandName: string;
+    steamGetIdCommandName: string;
   },
   userId: string,
   customJson?: string,
@@ -67,9 +67,9 @@ export function buildQueryKeyboard(
   }
   try {
     raw = raw.replace(/\$\{csInvCommandName\}/g, cmds.csInvCommandName);
-    raw = raw.replace(/\$\{csBindCommandName\}/g, cmds.csBindCommandName);
-    raw = raw.replace(/\$\{csMyidCommandName\}/g, cmds.csMyidCommandName);
-    raw = raw.replace(/\$\{getidCommandName\}/g, cmds.getidCommandName);
+    raw = raw.replace(/\$\{steamBindCommandName\}/g, cmds.steamBindCommandName);
+    raw = raw.replace(/\$\{steamMyIdCommandName\}/g, cmds.steamMyIdCommandName);
+    raw = raw.replace(/\$\{steamGetIdCommandName\}/g, cmds.steamGetIdCommandName);
     raw = raw.replace(/\$\{userId\}/g, userId);
     const parsed = JSON.parse(raw);
     if (parsed?.rows?.length) return parsed;
@@ -139,9 +139,9 @@ export async function replyWithMarkdownKeyboard(
     replyToUser: boolean;
     qqMarkdownKeyboardJson: string;
     csInvCommandName: string;
-    csBindCommandName: string;
-    csMyidCommandName: string;
-    getidCommandName: string;
+    steamBindCommandName: string;
+    steamMyIdCommandName: string;
+    steamGetIdCommandName: string;
   },
   title: string,
   content: string,
@@ -166,9 +166,9 @@ export async function replyWithMarkdownKeyboard(
     const kb = buildQueryKeyboard(
       {
         csInvCommandName: config.csInvCommandName,
-        csBindCommandName: config.csBindCommandName,
-        csMyidCommandName: config.csMyidCommandName,
-        getidCommandName: config.getidCommandName,
+        steamBindCommandName: config.steamBindCommandName,
+        steamMyIdCommandName: config.steamMyIdCommandName,
+        steamGetIdCommandName: config.steamGetIdCommandName,
       },
       session.userId,
       config.qqMarkdownKeyboardJson,
