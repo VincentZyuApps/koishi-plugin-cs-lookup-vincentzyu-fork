@@ -1,4 +1,5 @@
 import { Context } from 'koishi';
+import { registerCsHelpCommand } from './commands/cs-help';
 import { inv } from './commands/cs-inv';
 import { registerSteamGetIdCommand } from './commands/steam-getid';
 import { registerSteamBindCommand } from './commands/steam-bind';
@@ -80,6 +81,7 @@ export function apply(ctx: Context, config: CsLookupConfig) {
     },
     { primary: 'url' },
   );
+  registerCsHelpCommand(ctx, config);
   inv(ctx, config);
   registerSteamGetIdCommand(ctx, config);
   registerSteamBindCommand(ctx, config);

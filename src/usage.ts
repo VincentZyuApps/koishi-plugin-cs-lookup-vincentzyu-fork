@@ -63,6 +63,7 @@ export const usage = `
 <h3>✨ 功能概览</h3>
 <ul>
   <li>🎒 查询 CS2 / CS:GO Steam 库存并渲染为图片</li>
+  <li>📖 支持 <code>cs查库存帮助</code> / <code>cs-help</code> 查看 Markdown 帮助</li>
   <li>🔗 支持 <code>绑定steamid</code> / <code>steam-bind</code> 绑定 SteamID，<code>查询我绑定的steamid</code> / <code>steam-myid</code> 查询自己的绑定</li>
   <li>🆔 支持 <code>获取steamid</code> / <code>steam-getid</code> 从 Steam 个人主页链接解析 SteamID</li>
   <li>🧠 支持数据库缓存库存 JSON，支持磁盘缓存饰品图片</li>
@@ -73,7 +74,8 @@ export const usage = `
 
 <h3>⌨️ 主要指令</h3>
 <ul>
-  <li><code>cs-inv [targetUser]</code>：查询自己或指定用户绑定的 Steam 库存</li>
+  <li><code>cs查库存帮助</code>：查看 CS2 库存查询帮助，别名 <code>cs-help</code></li>
+  <li><code>查cs库存 [targetUser]</code>：查询自己或指定用户绑定的 Steam 库存，别名 <code>cs-inv</code></li>
   <li><code>cs-inv -s &lt;steamid&gt;</code>：直接查询指定 SteamID 的库存</li>
   <li><code>cs-inv --refresh</code>：强制刷新数据库缓存后重新拉取库存</li>
   <li><code>cs-inv --no-refresh</code>：强制使用数据库缓存（若存在）</li>

@@ -30,6 +30,8 @@ export interface Config {
   // ==================================================================
   // ===== 📝 指令名设置 =====
   // ==================================================================
+  /** 帮助指令名称 */
+  csHelpCommandName: string;
   /** 查询库存指令名称 */
   csInvCommandName: string;
   /** 绑定 SteamID 指令名称 */
@@ -214,6 +216,9 @@ export const Config: Schema<Config> = Schema.intersect([
   }).description('⚙️ 基础设置'),
 
   Schema.object({
+    csHelpCommandName: Schema.string()
+      .default('cs查库存帮助')
+      .description('📖 cs-help 的指令名称'),
     csInvCommandName: Schema.string()
       .default('查cs库存')
       .description('🎒 cs-inv的指令名称'),
@@ -286,7 +291,7 @@ export const Config: Schema<Config> = Schema.intersect([
       .role('textarea', { rows: [5, 10] })
       .default(stringifyCompact(DEFAULT_KEYBOARD_ROWS))
       .description(
-        '📋 QQ Markdown 按钮 JSON 配置<br><em>支持变量: <code>${csInvCommandName}</code> <code>${steamBindCommandName}</code> <code>${steamMyIdCommandName}</code> <code>${steamGetIdCommandName}</code> <code>${userId}</code></em>',
+        '📋 QQ Markdown 按钮 JSON 配置<br><em>支持变量: <code>${csHelpCommandName}</code> <code>${csInvCommandName}</code> <code>${steamBindCommandName}</code> <code>${steamMyIdCommandName}</code> <code>${steamGetIdCommandName}</code> <code>${userId}</code></em>',
       ),
   }).description('🤖 QQ 官方 Bot 平台设置'),
 

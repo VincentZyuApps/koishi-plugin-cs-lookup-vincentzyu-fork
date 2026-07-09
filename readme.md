@@ -1,3 +1,7 @@
+> 推荐前往 [GitHub](https://github.com/VincentZyu233/koishi-plugin-cs-lookup-vincentzyu-fork) 或 [Gitee](https://gitee.com/vincent-zyu/koishi-plugin-cs-lookup-vincentzyu-fork) 阅读 README，体验更好。
+
+![koishi-plugin-cs-lookup-vincentzyu-fork](https://socialify.git.ci/VincentZyu233/koishi-plugin-cs-lookup-vincentzyu-fork/image?description=1&font=Bitter&forks=1&issues=1&language=1&logo=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ff%2Ff3%2FKoishi.js_Logo.png&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
+
 # koishi-plugin-cs-lookup-vincentzyu-fork
 
 [![npm](https://img.shields.io/npm/v/koishi-plugin-cs-lookup-vincentzyu-fork?style=flat-square&logo=npm)](https://www.npmjs.com/package/koishi-plugin-cs-lookup-vincentzyu-fork)
@@ -73,7 +77,8 @@
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `csInvCommandName` | string | `"cs-inv"` | 🎒 查询库存指令名称 |
+| `csHelpCommandName` | string | `"cs查库存帮助"` | 📖 帮助指令名称，别名 `cs-help` |
+| `csInvCommandName` | string | `"查cs库存"` | 🎒 查询库存指令名称，别名 `cs-inv` |
 | `steamBindCommandName` | string | `"绑定steamid"` | 🔗 绑定 SteamID 指令名称，别名 `steam-bind` |
 | `steamMyIdCommandName` | string | `"查询我绑定的steamid"` | 🆔 查询已绑定 SteamID 指令名称，别名 `steam-myid` |
 | `steamGetIdCommandName` | string | `"获取steamid"` | 🔍 解析 SteamID 指令名称，别名 `steam-getid` |
@@ -95,7 +100,7 @@
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `enableQQMarkdown` | boolean | `true` | 💬 在 QQ 官方 Bot 平台发送图片时附带 Markdown + 按钮消息 |
-| `qqMarkdownKeyboardJson` | string | JSON | 📋 QQ Markdown 按钮 JSON 配置<br>支持变量：`${csInvCommandName}` `${steamBindCommandName}` `${steamMyIdCommandName}` `${steamGetIdCommandName}` `${userId}` |
+| `qqMarkdownKeyboardJson` | string | JSON | 📋 QQ Markdown 按钮 JSON 配置<br>支持变量：`${csHelpCommandName}` `${csInvCommandName}` `${steamBindCommandName}` `${steamMyIdCommandName}` `${steamGetIdCommandName}` `${userId}` |
 
 ### 🎨 渲染设置（puppeteer 网页截图）
 
@@ -161,7 +166,11 @@
 
 ## 📋 指令
 
-### 🎒 `cs-inv [targetUser]`
+### 📖 `cs查库存帮助` / `cs-help`
+
+查看 CS2 库存查询插件帮助。QQ 官方 Bot 平台且开启 `enableQQMarkdown` 时，会发送 Markdown 帮助卡片和按钮；其他平台直接发送同一份 Markdown 文本。
+
+### 🎒 `查cs库存 [targetUser]` / `cs-inv [targetUser]`
 
 查询 CS 库存并返回渲染图片。
 
@@ -181,7 +190,7 @@
 
 **示例：**
 ```
-cs-inv
+查cs库存
 cs-inv @某人
 cs-inv 123456789
 cs-inv -s 7656119xxxxxxxxxx

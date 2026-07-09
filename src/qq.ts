@@ -5,6 +5,19 @@ export const DEFAULT_KEYBOARD_ROWS = {
     {
       buttons: [
         {
+          render_data: { label: '📖 CS库存帮助', style: 1 },
+          action: {
+            type: 2,
+            permission: { type: 2 },
+            data: '${csHelpCommandName}',
+            enter: true,
+          },
+        },
+      ],
+    },
+    {
+      buttons: [
+        {
           render_data: { label: '🎒 查库存', style: 1 },
           action: {
             type: 2,
@@ -51,6 +64,7 @@ export const DEFAULT_KEYBOARD_ROWS = {
 
 export function buildQueryKeyboard(
   cmds: {
+    csHelpCommandName: string;
     csInvCommandName: string;
     steamBindCommandName: string;
     steamMyIdCommandName: string;
@@ -66,6 +80,7 @@ export function buildQueryKeyboard(
     raw = JSON.stringify(DEFAULT_KEYBOARD_ROWS);
   }
   try {
+    raw = raw.replace(/\$\{csHelpCommandName\}/g, cmds.csHelpCommandName);
     raw = raw.replace(/\$\{csInvCommandName\}/g, cmds.csInvCommandName);
     raw = raw.replace(/\$\{steamBindCommandName\}/g, cmds.steamBindCommandName);
     raw = raw.replace(/\$\{steamMyIdCommandName\}/g, cmds.steamMyIdCommandName);
@@ -138,6 +153,7 @@ export async function replyWithMarkdownKeyboard(
     enableQQMarkdown: boolean;
     replyToUser: boolean;
     qqMarkdownKeyboardJson: string;
+    csHelpCommandName: string;
     csInvCommandName: string;
     steamBindCommandName: string;
     steamMyIdCommandName: string;
@@ -165,6 +181,7 @@ export async function replyWithMarkdownKeyboard(
       '\n\n- ↓ 其他cs饰品查询插件的操作 ↓';
     const kb = buildQueryKeyboard(
       {
+        csHelpCommandName: config.csHelpCommandName,
         csInvCommandName: config.csInvCommandName,
         steamBindCommandName: config.steamBindCommandName,
         steamMyIdCommandName: config.steamMyIdCommandName,
