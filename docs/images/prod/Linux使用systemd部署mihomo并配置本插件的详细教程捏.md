@@ -1,16 +1,16 @@
-﻿# Linux 使用 systemd 部署 Mihomo 并配置本插件
+﻿# 🐧 Linux 使用 systemd 部署 Mihomo 并配置本插件
 
-## 1. 适用范围
+## 🎯 1. 适用范围
 
 本文面向从 `1.4.7` 升级到 `1.4.9-beta.14+20260828` 的 Koishi 实例。
 Mihomo 是开源项目，官方仓库为 <https://github.com/MetaCubeX/mihomo>，许可证为 GPL-3.0。
 
-## 2. 版本变化
+## 🔄 2. 版本变化
 
 1.4.9 不再兼容旧版 `proxy.enabled`。升级前请备份 `koishi.yml`，然后删除该字段。
 代理行为由 `proxy.mode` 决定：`direct` 直连，`manual` 使用单个代理，`mihomo` 连接 Mihomo 入站。
 
-## 3. 推荐目录
+## 📁 3. 推荐目录
 
 将 Mihomo 的程序、配置、缓存和日志集中放在一个目录，例如：
 
@@ -26,7 +26,7 @@ Mihomo 是开源项目，官方仓库为 <https://github.com/MetaCubeX/mihomo>�
 
 目录权限应只允许运维用户和 systemd 服务账户读取订阅及日志文件。
 
-## 4. Mihomo 配置要点
+## ⚙️ 4. Mihomo 配置要点
 
 在 `runtime.yaml` 中配置订阅、代理组和入站端口。示例只展示本地监听，不包含真实订阅地址：
 
@@ -39,7 +39,7 @@ external-controller: 127.0.0.1:9090
 
 如果 Koishi 与 Mihomo 不在同一台机器，将 `host` 改为 Mihomo 所在局域网地址，并限制防火墙只允许可信网段访问。
 
-## 5. systemd 服务
+## 🧩 5. systemd 服务
 
 创建 `systemd/mihomo.service`：
 
@@ -74,7 +74,7 @@ systemctl status mihomo.service
 journalctl -u mihomo.service -f
 ```
 
-## 6. Koishi 配置
+## 📝 6. Koishi 配置
 
 在每个 Koishi 实例中删除旧 `proxy.enabled`，并填写 Mihomo 入站：
 
@@ -90,7 +90,7 @@ useCookie: false
 `socks5h` 会将 DNS 解析交给代理端，通常更适合 Steam 社区接口。
 如果只开放 HTTP 入站，则将协议改为 `http`，并填写对应端口。
 
-## 7. 验证链路
+## ✅ 7. 验证链路
 
 先验证 Mihomo 入站：
 
@@ -100,19 +100,19 @@ curl -I https://www.google.com -x socks5h://127.0.0.1:7891
 
 再重启 Koishi，检查日志出现 `代理已启用: socks5h://...`，然后执行一次库存查询。
 
-## 8. 故障排查
+## 🩺 8. 故障排查
 
 - `429`：降低请求频率，等待插件退避时间，并在 Mihomo 中切换节点；不要连续刷新。
 - `403`：确认 Steam 账号库存、个人资料和游戏详情公开；403 不一定是代理故障。
 - TLS/重定向错误：优先改用 `socks5h`，检查 Mihomo 规则是否将 Steam 域名交给代理组。
 - 连接失败：检查监听地址、防火墙、端口和 `systemctl status` 输出。
 
-## 9. 订阅与安全
+## 🔒 9. 订阅与安全
 
 订阅更新脚本可以由 systemd timer 定时执行；更新后先运行 Mihomo 配置校验，再重启服务。
 不要把订阅 URL、Steam API Key、Cookie、真实节点名或带凭证的配置提交到仓库。
 
-## 10. 回滚
+## ↩️ 10. 回滚
 
 恢复升级前的插件版本和 `koishi.yml` 备份，停止 Mihomo 服务即可回到原代理链路：
 
