@@ -150,9 +150,7 @@ export interface Config {
   /** 代理设置 */
   proxy: {
     /** 代理模式：直连、手工代理或 Mihomo 统一入口 */
-    mode?: 'direct' | 'manual' | 'mihomo';
-    /** 是否启用代理 */
-    enabled: boolean;
+    mode: 'direct' | 'manual' | 'mihomo';
     /** 代理协议 */
     protocol: string;
     /** 代理地址 */
@@ -478,8 +476,8 @@ export const Config: Schema<Config> = Schema.intersect([
         Schema.const('mihomo').description('🧠 使用 Mihomo 统一代理入口'),
       ])
         .role('radio')
-        .description('🔀 代理工作模式。未设置时兼容旧版 enabled 字段。'),
-      enabled: Schema.boolean().description('✅ 是否启用代理。').default(true),
+        .default('direct')
+        .description('🔀 代理工作模式。1.4.9 起必须明确选择模式。'),
       protocol: Schema.union([
         Schema.const(PROXY_PROTOCOL.HTTP).description('🌐 HTTP 代理'),
         Schema.const(PROXY_PROTOCOL.HTTPS).description('🔒 HTTPS 代理'),
