@@ -149,6 +149,8 @@ export interface Config {
   __exampleProxyAddr__: string;
   /** 代理设置 */
   proxy: {
+    /** 代理模式：直连、手工代理或 Mihomo 统一入口 */
+    mode?: 'direct' | 'manual' | 'mihomo';
     /** 是否启用代理 */
     enabled: boolean;
     /** 代理协议 */
@@ -470,6 +472,13 @@ export const Config: Schema<Config> = Schema.intersect([
       )
       .role('link'),
     proxy: Schema.object({
+      mode: Schema.union([
+        Schema.const('direct').description('⛔ 直连，不使用代理'),
+        Schema.const('manual').description('🔌 使用下方手工代理地址'),
+        Schema.const('mihomo').description('🧠 使用 Mihomo 统一代理入口'),
+      ])
+        .role('radio')
+        .description('🔀 代理工作模式。未设置时兼容旧版 enabled 字段。'),
       enabled: Schema.boolean().description('✅ 是否启用代理。').default(true),
       protocol: Schema.union([
         Schema.const(PROXY_PROTOCOL.HTTP).description('🌐 HTTP 代理'),

@@ -8,8 +8,9 @@ yarn-debug.log
 yarn-error.log
 tsconfig.tsbuildinfo
 
-# 饰品图片缓存目录
-cache/
+cache
+temp
+tmp
 
 .eslintcache
 .DS_Store

@@ -16,6 +16,36 @@ const RETRYABLE_ERROR_MESSAGES = [
   'socket disconnected', 'socket hang up', 'ECONNRESET', 'Client network socket disconnected',
 ];
 
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
+const MAX_CONCURRENT_REQUESTS = 2;
+let activeRequests = 0;
+const requestQueue: Array<() => void> = [];
+
+async function withRequestSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (activeRequests >= MAX_CONCURRENT_REQUESTS) {
+    await new Promise<void>((resolve) => requestQueue.push(resolve));
+  }
+  activeRequests++;
+  try {
+    return await fn();
+  } finally {
+    activeRequests--;
+    requestQueue.shift()?.();
+  }
+}
+
+function getRetryAfterMs(error: any, attempt: number): number {
+  const value = error?.response?.headers?.['retry-after'];
+  if (value !== undefined) {
+    const seconds = Number(value);
+    if (Number.isFinite(seconds)) return Math.min(Math.max(seconds * 1000, 1000), 60000);
+    const timestamp = Date.parse(String(value));
+    if (Number.isFinite(timestamp)) return Math.min(Math.max(timestamp - Date.now(), 1000), 60000);
+  }
+  const base = Math.min(60000, 2000 * 2 ** attempt);
+  return base + Math.floor(Math.random() * 500);
+}
+
 function isRetryableError(e: any): boolean {
   if (RETRYABLE_ERROR_CODES.has(e.code)) return true;
   const msg = e.message || '';
@@ -75,13 +105,14 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
     headers['Cookie'] = config.cookie;
   }
 
-  if (!config.proxy?.enabled) {
+  const mode = config.proxy?.mode ?? (config.proxy?.enabled ? 'manual' : 'direct');
+  if (mode === 'direct') {
     if (verbose) {
       logInfo(ctx, config, 'debug', 'src/proxy.ts', '🔗 🔌 代理未启用，使用直连模式');
       logInfo(ctx, config, 'debug', 'src/proxy.ts', `📋 请求头: ${JSON.stringify(headers, null, 2)}`);
     }
     const instance = axios.create({
-      timeout: 15000, headers, });
+      timeout: 15000, headers, proxy: false });
     if (verbose) addVerboseInterceptors(instance, ctx, '');
     return instance;
   }
@@ -113,13 +144,13 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
       } else {
         console.warn(`Unknown proxy protocol: ${protocol}. Not using proxy.`);
       }
-      const inst = axios.create({ timeout: 15000, headers });
+      const inst = axios.create({ timeout: 15000, headers, proxy: false });
       if (verbose) addVerboseInterceptors(inst, ctx, '');
       return inst;
   }
 
   const instance = axios.create({
-    httpAgent: agent, httpsAgent: agent, timeout: 15000, headers, });
+    httpAgent: agent, httpsAgent: agent, timeout: 15000, headers, proxy: false });
 
   if (verbose) addVerboseInterceptors(instance, ctx, proxyUrl);
   return instance;
@@ -137,14 +168,16 @@ export async function requestWithRetry<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await fn();
+      return await withRequestSlot(fn);
     } catch (e) {
-      if (!isRetryableError(e) || attempt >= maxRetries) {
+      const status = (e as any)?.response?.status;
+      const retryable = isRetryableError(e) || RETRYABLE_STATUS_CODES.has(status);
+      if (!retryable || attempt >= maxRetries) {
         throw e;
       }
-      const delay = 1000 * (attempt + 1);
+      const delay = getRetryAfterMs(e, attempt);
       if (ctx) {
-        logInfo(ctx, ctx.config, 'warn', 'src/proxy.ts', `🔄 ${label} 第${attempt + 1}次失败 (${e.code || e.message})，` +
+        logInfo(ctx, ctx.config, 'warn', 'src/proxy.ts', `🔄 ${label} 第${attempt + 1}次失败 (${status ? `HTTP ${status}` : e.code || e.message})，` +
             `${delay}ms 后重试 (剩余 ${maxRetries - attempt - 1} 次)...`);
       }
       await new Promise((resolve) => setTimeout(resolve, delay));

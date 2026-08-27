@@ -497,19 +497,8 @@ export function inv(ctx: Context, config: any) {
         let proxiedPlayerAvatarFullUrl = '';
         let playerLastLogoffTimeStr = '未知';
 
-        try {
-          const playerInfo = await fetchPlayerInfo();
-          const playerAvatarFullUrl = playerInfo.avatarfull;
-          proxiedPlayerAvatarFullUrl = await getImageBase64(
-            ctx, axiosWithProxy, playerAvatarFullUrl, config.logLevel);
-          playerPersonName = playerInfo.personaname;
-          if (playerInfo.lastlogoff) {
-            playerLastLogoffTimeStr = new Date(
-              playerInfo.lastlogoff * 1000, ).toLocaleString();
-          }
-        } catch (err) {
-          logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `⚠️ 🖼️ 渲染错误页面时获取用户信息失败: ${err.message}`);
-        }
+        // 错误渲染不能再次请求 Steam，否则 429/网络故障会被放大。
+        // 如果前面的玩家信息请求成功，正常路径已经写入这些变量；失败时保留默认值。
 
         const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
         const invHtml = generateHtml({

@@ -135,6 +135,7 @@
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
+| `proxy.mode` | `direct` / `manual` / `mihomo` | 未设置时兼容 `proxy.enabled` | 🔀 代理模式：直连、手工代理或 Mihomo 统一入口 |
 | `proxy.enabled` | boolean | `true` | ✅ 是否启用代理 |
 | `proxy.protocol` | `"http"` / `"https"` / `"socks4"` / `"socks5"` / `"socks5h"` | `"socks5h"` | 🧦 代理协议（socks5h 支持远程 DNS） |
 | `proxy.host` | string | `"127.0.0.1"` | 🏠 代理地址 |
