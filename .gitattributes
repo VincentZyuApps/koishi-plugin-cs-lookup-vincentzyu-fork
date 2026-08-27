@@ -1,5 +1,8 @@
 * text eol=lf
 
+# Count Markdown files (including README and docs) in GitHub Linguist statistics.
+*.md linguist-language=Markdown linguist-detectable=true
+
 *.png -text
 *.jpg -text
 *.ico -text

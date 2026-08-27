@@ -3,7 +3,7 @@
 ## 🎯 1. 适用范围
 
 本文面向从 `1.4.7` 升级到 `1.4.9-beta.14+20260828` 的 Koishi 实例。
-Mihomo 是开源项目，官方仓库为 <https://github.com/MetaCubeX/mihomo>，许可证为 GPL-3.0。
+[Mihomo](https://github.com/MetaCubeX/mihomo) 是开源项目，官方仓库为 <https://github.com/MetaCubeX/mihomo>，许可证为 GPL-3.0。
 
 ## 🔄 2. 版本变化
 
