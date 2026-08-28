@@ -54,9 +54,9 @@
 
 ### 3️⃣ 可选配置代理
 
-如果服务器访问 Steam 相关接口不稳定，可以在插件配置中启用代理。
+如果遇到 Steam `429`、连接不稳定或共享出口 IP 被限制，推荐使用开源 [Mihomo](https://github.com/MetaCubeX/mihomo) 管理代理节点，再让插件连接其 HTTP 或 SOCKS5 入站端口。
 
-理论上支持 `axios` 扩展支持的所有协议 — `http` / `https` / `socks4` / `socks5` / `socks5h`，不过我自己只测试了 `clash cli + socks5` 这种用法。
+理论上支持 `axios` 扩展支持的所有协议 — `http` / `https` / `socks4` / `socks5` / `socks5h`；Steam 社区接口优先推荐 `socks5h`。
 
 ---
 
@@ -133,13 +133,27 @@
 
 ### 🔌 代理配置
 
-#### 🚀 从 1.4.7 迁移到 1.4.9 / Mihomo
+#### 🚦 Steam 429 时的推荐配置
 
-> 🚀 1.4.9 起请通过 `proxy.mode` 明确选择代理模式；使用 [Mihomo](https://github.com/MetaCubeX/mihomo) 时请参考 [Linux systemd 部署与迁移教程](docs/images/prod/Linux使用systemd部署mihomo并配置本插件的详细教程捏.md)。
+> 遇到 429 时，推荐使用 [Mihomo](https://github.com/MetaCubeX/mihomo) 管理节点选择和故障切换。若 Steam/CS2 代理组包含多个节点，优先考虑 `fallback` 策略；详细说明见 [Linux systemd 部署与 Koishi 接入教程](docs/images/prod/Linux使用systemd部署mihomo并配置本插件的详细教程捏.md)。
+
+推荐的 Koishi 配置示例。请替换为自己的代理地址；不要提交订阅 URL、API Key 或 Cookie：
+
+```yaml
+proxy:
+  enabled: true
+  protocol: socks5h
+  host: 127.0.0.1
+  port: 7891
+useUserAgent: true
+useCookie: false
+```
+
+`proxy.enabled: false` 时插件直连 Steam；设为 `true` 时使用下方协议、地址和端口。Cookie 默认保持关闭，只在本人确认确有会话需求时填写。
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `proxy.mode` | `direct` / `manual` / `mihomo` | `direct` | 🔀 代理模式：直连、手工代理或 Mihomo 统一入口 |
+| `proxy.enabled` | boolean | `true` | ✅ 是否启用下方代理地址；关闭时直连 Steam |
 | `proxy.protocol` | `"http"` / `"https"` / `"socks4"` / `"socks5"` / `"socks5h"` | `"socks5h"` | 🧦 代理协议（socks5h 支持远程 DNS） |
 | `proxy.host` | string | `"127.0.0.1"` | 🏠 代理地址 |
 | `proxy.port` | number | `7897` | 🛖 代理端口 |

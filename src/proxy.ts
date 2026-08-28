@@ -105,8 +105,7 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
     headers['Cookie'] = config.cookie;
   }
 
-  const mode = config.proxy?.mode ?? 'direct';
-  if (mode === 'direct') {
+  if (!config.proxy?.enabled) {
     if (verbose) {
       logInfo(ctx, config, 'debug', 'src/proxy.ts', '🔗 🔌 代理未启用，使用直连模式');
       logInfo(ctx, config, 'debug', 'src/proxy.ts', `📋 请求头: ${JSON.stringify(headers, null, 2)}`);

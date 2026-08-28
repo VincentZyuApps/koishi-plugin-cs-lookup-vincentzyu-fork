@@ -2,10 +2,17 @@
 
 本文件根据 Git 提交历史整理，版本号以各提交中的 `package.json` 为准。作者沿用 Git commit author；同一版本包含多个提交时合并记录。
 
+## 🔁 1.4.10-beta.15+20260828
+
+- 恢复 `proxy.enabled` boolean 开关，移除未发布且无行为差异的代理模式选择。
+- 保留 SOCKS5H、请求并发限制、429/5xx 重试、`Retry-After` 和退避逻辑。
+- 重写 Mihomo 与 Steam 429 的配置说明，区分正式脱敏教程和局域网接入笔记。
+- 作者：VincentZyu233；协作者：Codex。
+
 ## 🚀 1.4.9-beta.14+20260828
 
-- 移除旧版 `proxy.enabled` 兼容逻辑，代理模式必须通过 `proxy.mode` 明确选择。
-- 补充从 1.4.7 迁移到 Mihomo 的配置文档和局域网部署指引。
+- 曾移除旧版 `proxy.enabled` 兼容逻辑，要求通过代理模式选择器明确配置。
+- 补充 Mihomo 配置文档和局域网部署指引。
 - 作者：VincentZyu233。
 
 ## 🚦 1.4.8-beta.13+20260828
