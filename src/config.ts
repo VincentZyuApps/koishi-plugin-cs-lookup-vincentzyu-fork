@@ -91,6 +91,10 @@ export interface Config {
   puppeteerShowRenderInfo: boolean;
   /** 库存物品列数 (2-10) */
   gridColumns: number;
+  /** 渲染图片宽度 (px) */
+  imageWidth?: number;
+  /** 单个饰品卡片高度 (px) */
+  cardHeight?: number;
   /** 渲染图片输出格式 */
   imageType: string;
   /** 截图质量 (0-100)，对 PNG 无效 */
@@ -103,6 +107,8 @@ export interface Config {
   itemCountCorner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   /** 饰品名称显示位置 */
   itemNamePosition: 'top' | 'center' | 'bottom';
+  /** 饰品名称最大显示行数 (1-5) */
+  itemNameMaxLines?: number;
   /** 饰品名称底纹透明度 (0-1) */
   itemNameBgOpacity: number;
   /** 饰品图片缩放比例 (50-300%) */
@@ -328,6 +334,18 @@ export const Config: Schema<Config> = Schema.intersect([
       .max(10)
       .step(1)
       .description('📊 库存物品的列数'),
+    imageWidth: Schema.number()
+      .default(1666)
+      .min(900)
+      .max(3840)
+      .step(1)
+      .description('📐 渲染图片总宽度 (px)'),
+    cardHeight: Schema.number()
+      .default(166)
+      .min(100)
+      .max(500)
+      .step(1)
+      .description('📏 单个饰品卡片高度 (px)'),
     imageType: Schema.union([
       Schema.const(IMAGE_TYPES.PNG).description('🖼️ PNG, ❌ 不支持调整quality'),
       Schema.const(IMAGE_TYPES.JPEG).description('🌄 JPEG, ✅ 支持调整quality'),
@@ -375,6 +393,12 @@ export const Config: Schema<Config> = Schema.intersect([
     ])
       .default('bottom')
       .description('📝 饰品名称显示位置'),
+    itemNameMaxLines: Schema.number()
+      .default(3)
+      .min(1)
+      .max(5)
+      .step(1)
+      .description('📝 饰品名称最大显示行数 (1-5)'),
     itemNameBgOpacity: Schema.number()
       .default(0.6)
       .min(0)

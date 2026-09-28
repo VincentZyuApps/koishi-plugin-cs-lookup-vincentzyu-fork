@@ -2,6 +2,13 @@
 
 本文件根据 Git 提交历史整理，版本号以各提交中的 `package.json` 为准。作者沿用 Git commit author；同一版本包含多个提交时合并记录。
 
+## 🚀 1.4.12-beta.17+20260929
+
+- 新增 `imageWidth`（渲染总宽度，默认 1666px）与 `cardHeight`（单个饰品卡片高度，默认 166px）配置项，视口与外层容器尺寸支持响应式及精确高度对齐。
+- 新增 `itemNameMaxLines` 配置项（默认 3 行），放宽长饰品名称截断限制。
+- 优化配置项文案，明确强调“单个饰品卡片高度”，杜绝与整图高度混淆。
+- 作者：VincentZyu233；协作者：gemini-code-assist。
+
 ## 🚀 1.4.11-beta.16+20260928
 
 - 默认请求头显式指定 `Accept-Encoding: br`，避免 Axios 默认发送 gzip 触发 Steam 对未登录请求的 429 反爬拦截。

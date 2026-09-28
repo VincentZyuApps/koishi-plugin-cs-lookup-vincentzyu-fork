@@ -89,6 +89,9 @@ export interface GenerateHtmlOptions {
   watermarkOpacity?: number;
   watermarkRowGap?: number;
   watermarkColGap?: number;
+  imageWidth?: number;
+  cardHeight?: number;
+  itemNameMaxLines?: number;
 }
 
 export interface RenderCsInvImageOptions {
@@ -103,7 +106,33 @@ export interface RenderCsInvImageOptions {
 
 export function generateHtml(options: GenerateHtmlOptions): string {
   const {
-    cardHTML, gridColumns, totalStr, steamId, steamName, playerAvatarUrl, playerLastLogoffTimeStr, darkMode, enableAvatarBackground = false, fontConfig = null, showItemCount = true, itemCountCorner = 'top-right', itemNamePosition = 'top', itemNameBgOpacity = 0.6, itemImageScale = 100, footerCustomText = '', watermarkEnabled = true, watermarkText = 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork', watermarkFontSize = 16, watermarkAngle = 45, watermarkOpacity = 0.6, watermarkRowGap = 60, watermarkColGap = 80, } = options;
+    cardHTML,
+    gridColumns,
+    totalStr,
+    steamId,
+    steamName,
+    playerAvatarUrl,
+    playerLastLogoffTimeStr,
+    darkMode,
+    enableAvatarBackground = false,
+    fontConfig = null,
+    showItemCount = true,
+    itemCountCorner = 'top-right',
+    itemNamePosition = 'top',
+    itemNameBgOpacity = 0.6,
+    itemImageScale = 100,
+    footerCustomText = '',
+    watermarkEnabled = true,
+    watermarkText = 'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
+    watermarkFontSize = 16,
+    watermarkAngle = 45,
+    watermarkOpacity = 0.6,
+    watermarkRowGap = 60,
+    watermarkColGap = 80,
+    imageWidth = 1666,
+    cardHeight = 166,
+    itemNameMaxLines = 3,
+  } = options;
 
   const fontFaceCss = fontConfig?.css || '';
   const fontFamily = fontConfig?.fontFamily || BASE_FONT_STACK;
@@ -120,7 +149,7 @@ export function generateHtml(options: GenerateHtmlOptions): string {
   const backgroundBlurDisplay = enableAvatarBackground ? 'block' : 'none';
   const backgroundOpacity = darkMode ? '0.35' : '0.5';
 
-  const CARD_HEIGHT = 150;
+  const CARD_HEIGHT = cardHeight;
   const GAP = 8;
   const PAGE_PADDING = 16;
 
@@ -183,7 +212,7 @@ export function generateHtml(options: GenerateHtmlOptions): string {
     }
     
     .container {
-      max-width: 1400px;
+      max-width: ${Math.max(760, imageWidth - 100)}px;
       margin: 0 auto;
       background: ${containerBg};
       border-radius: 16px;
@@ -314,11 +343,11 @@ export function generateHtml(options: GenerateHtmlOptions): string {
       font-weight: 600;
       text-align: center;
       line-height: 1.25;
-      max-height: 2.5em;
+      max-height: ${1.25 * itemNameMaxLines}em;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: ${itemNameMaxLines};
       -webkit-box-orient: vertical;
       text-shadow: ${darkMode ? '0 1px 3px rgba(0,0,0,0.9)' : '0 1px 2px rgba(0,0,0,0.4)'};
       padding: 4px 6px;

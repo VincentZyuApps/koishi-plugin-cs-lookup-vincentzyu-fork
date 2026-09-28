@@ -439,22 +439,55 @@ export function inv(ctx: Context, config: any) {
           }
 
           totalStr = `总物品数: ${invData.total_inventory_count}`;
-          const CARD_HEIGHT_CALC = 150;
+          const cardHeight = config.cardHeight || 166;
           const GAP_CALC = 8;
           const rowCount = Math.ceil(itemMap.size / gridColumns);
-          pageHeight = 150 + rowCount * (CARD_HEIGHT_CALC + GAP_CALC) + 40;
+          pageHeight = 150 + rowCount * (cardHeight + GAP_CALC) + 40;
         }
 
         const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
 
         const html = generateHtml({
-          cardHTML: cardHtml, gridColumns, totalStr, steamId: STEAMID, steamName: playerPersonName, playerAvatarUrl: proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, darkMode: config.enableDarkTheme, enableAvatarBackground: config.enableAvatarBackground, fontConfig, showItemCount: config.showItemCount !== false, itemCountCorner: config.itemCountCorner || 'top-right', itemNamePosition: config.itemNamePosition || 'top', itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6, itemImageScale: config.itemImageScale ?? 100, footerCustomText: config.footerCustomText || '', watermarkEnabled: config.watermarkEnabled !== false, watermarkText:
+          cardHTML: cardHtml,
+          gridColumns,
+          totalStr,
+          steamId: STEAMID,
+          steamName: playerPersonName,
+          playerAvatarUrl: proxiedPlayerAvatarFullUrl,
+          playerLastLogoffTimeStr,
+          darkMode: config.enableDarkTheme,
+          enableAvatarBackground: config.enableAvatarBackground,
+          fontConfig,
+          showItemCount: config.showItemCount !== false,
+          itemCountCorner: config.itemCountCorner || 'top-right',
+          itemNamePosition: config.itemNamePosition || 'top',
+          itemNameMaxLines: config.itemNameMaxLines || 3,
+          itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6,
+          itemImageScale: config.itemImageScale ?? 100,
+          imageWidth: config.imageWidth || 1666,
+          cardHeight: config.cardHeight || 166,
+          footerCustomText: config.footerCustomText || '',
+          watermarkEnabled: config.watermarkEnabled !== false,
+          watermarkText:
             config.watermarkText ||
-            'Powered by koishi-plugin-cs-lookup-vincentzyu-fork', watermarkFontSize: config.watermarkFontSize ?? 16, watermarkAngle: config.watermarkAngle ?? 45, watermarkOpacity: config.watermarkOpacity ?? 0.6, watermarkRowGap: config.watermarkRowGap ?? 60, watermarkColGap: config.watermarkColGap ?? 80, });
+            'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
+          watermarkFontSize: config.watermarkFontSize ?? 16,
+          watermarkAngle: config.watermarkAngle ?? 45,
+          watermarkOpacity: config.watermarkOpacity ?? 0.6,
+          watermarkRowGap: config.watermarkRowGap ?? 60,
+          watermarkColGap: config.watermarkColGap ?? 80,
+        });
         logTiming('Pptr设置页面内容');
         logTiming('Pptr等待图片加载');
         const invImageBase64 = await renderCsInvImage(ctx, {
-          html, imageType: config.imageType || 'jpeg', imageQuality: config.imageQuality || 60, waitUntil: config.waitUntil || 'domcontentloaded', viewportWidth: 1500, viewportHeight: pageHeight, logLevel: config.logLevel, });
+          html,
+          imageType: config.imageType || 'jpeg',
+          imageQuality: config.imageQuality || 60,
+          waitUntil: config.waitUntil || 'domcontentloaded',
+          viewportWidth: config.imageWidth || 1666,
+          viewportHeight: pageHeight,
+          logLevel: config.logLevel,
+        });
         logTiming('Pptr截图完成');
         const replyPrefixResult = config.replyToUser
           ? h.quote(session.messageId)
