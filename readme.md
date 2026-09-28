@@ -136,6 +136,10 @@
 #### 🚦 Steam 429 时的推荐配置
 
 > 遇到 429 时，推荐使用 [Mihomo](https://github.com/MetaCubeX/mihomo) 管理节点选择和故障切换。若 Steam/CS2 代理组包含多个节点，优先考虑 `fallback` 策略；详细说明见 [Linux systemd 部署与 Koishi 接入教程](docs/images/prod/Linux使用systemd部署mihomo并配置本插件的详细教程捏.md)。
+>
+> 💡 **防 429 进阶建议**：
+> - 插件默认已在底层指定 `Accept-Encoding: br`，避免 Axios 默认带 gzip 触发 Steam 对未登录请求的爬虫拦截。
+> - 若多 Bot 共享同一代理出口、或特定 IP 仍频繁遭遇 Steam 429 限流，**强烈建议填入并启用有效登录 Cookie**（从浏览器登录 Steam 后打开库存页抓取包含 `steamLoginSecure` 与 `sessionid` 的 Cookie，并将 `useCookie` 设为 `true`）。Steam 对已认证用户的库存查询具有更高的限流宽容度与成功率。
 
 推荐的 Koishi 配置示例。请替换为自己的代理地址；不要提交订阅 URL、API Key 或 Cookie：
 
@@ -147,9 +151,11 @@ proxy:
   port: 7891
 useUserAgent: true
 useCookie: false
+# 遇到频繁 429 时，可填入登录 Cookie 并将 useCookie 改为 true
+# cookie: "sessionid=...; steamLoginSecure=...;"
 ```
 
-`proxy.enabled: false` 时插件直连 Steam；设为 `true` 时使用下方协议、地址和端口。Cookie 默认保持关闭，只在本人确认确有会话需求时填写。
+`proxy.enabled: false` 时插件直连 Steam；设为 `true` 时使用下方协议、地址和端口。Cookie 默认保持关闭，在遭遇 429 限流或有特定账号会话需求时推荐开启。
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
@@ -159,8 +165,8 @@ useCookie: false
 | `proxy.port` | number | `7897` | 🛖 代理端口 |
 | `useUserAgent` | boolean | `true` | 🌐 是否使用自定义 User-Agent |
 | `userAgent` | string | `"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"` | 🔍 自定义 UA（Chrome 打开 chrome://version 查看） |
-| `useCookie` | boolean | `false` | 🍪 是否使用自定义 Cookie |
-| `cookie` | string | `""` | 🍪 自定义 Cookie（F12 Network 找 steamcommunity.com/inventory 请求的 cookie） |
+| `useCookie` | boolean | `false` | 🍪 是否使用自定义 Cookie（频繁 429 时推荐填入登录 Cookie 开启） |
+| `cookie` | string | `""` | 🍪 自定义 Cookie（建议包含 `steamLoginSecure` 与 `sessionid`） |
 
 ### 🔌 REST API 设置
 

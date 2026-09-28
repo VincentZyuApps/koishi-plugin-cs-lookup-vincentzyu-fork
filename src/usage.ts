@@ -108,6 +108,18 @@ export const usage = `
   <li>磁盘目录 <code>cache/inv_data</code>：开启调试落盘时保存完整库存响应 JSON</li>
 </ul>
 
+<h3>🚦 代理与 Steam 429 应对</h3>
+<ul>
+  <li>Steam 对未登录状态下的高频库存查询具有严格的风控机制（HTTP 429 Too Many Requests）。</li>
+  <li>插件底层已针对性优化压缩请求头（<code>Accept-Encoding: br</code>）并内置退避重试与并发控制。</li>
+  <li><b>若仍频繁遭遇 429</b>：
+    <ul>
+      <li>推荐配置代理或使用 <a href="https://github.com/MetaCubeX/mihomo" target="_blank">Mihomo</a> 管理多出口节点；</li>
+      <li>可以在插件设置中开启 <code>useCookie</code> 并填入浏览器的有效登录 Cookie（包含 <code>steamLoginSecure</code> 与 <code>sessionid</code>）。Steam 对已登录合法会话的库存接口限流阈值显著高于匿名请求，可作为最有效的防 429 兜底方案。</li>
+    </ul>
+  </li>
+</ul>
+
 <h3>🔌 REST API 说明</h3>
 <p>启用 <code>enableRestServer</code> 后，插件会启动一个 Fastify 服务。请务必修改默认的 <code>restServerToken</code> 与 <code>restServerSecret</code>，避免直接暴露默认凭据。</p>
 

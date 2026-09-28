@@ -495,11 +495,13 @@ export const Config: Schema<Config> = Schema.intersect([
       .description('🔍 chrome打开chrome://version页面，找到用户代理')
       .role('textarea', { rows: [2, 10] }),
     useCookie: Schema.boolean()
-      .description('🍪 是否使用自定义 Cookie')
+      .description(
+        '🍪 是否使用自定义 Cookie<br>💡 <b>防 429 提示</b>：如果查询频繁遭遇 Steam 429 Too Many Requests 限流，可以尝试填入并启用已登录的 Steam Cookie（已登录身份拥有更宽松的限流策略）。',
+      )
       .default(false),
     cookie: Schema.string()
       .description(
-        '🍪 浏览器访问steam库存链接，然后F12打开Network，找到这个请求的cookie填入。 <br/> https://steamcommunity.com/inventory/76561198307564265/730/2?l=schinese%EF%BC%8C ',
+        '🍪 浏览器登录 Steam 后打开任意库存链接（如 https://steamcommunity.com/inventory/76561198307564265/730/2?l=schinese ），F12 打开 Network 查看请求头中的 Cookie 并填入（建议包含 <code>steamLoginSecure</code> 与 <code>sessionid</code>）。<br>💡 遇到频繁 429 时，填入有效登录 Cookie 可作为强力兜底手段。',
       )
       .role('textarea', { rows: [2, 10] }),
   }).description('🔌 代理配置'),

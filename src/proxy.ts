@@ -95,7 +95,9 @@ export function createAxiosInstance(config: any, ctx?: any): AxiosInstance {
   const verbose = !!(LOG_LEVELS[config.logLevel] >= LOG_LEVELS.debug && ctx);
 
   const headers: any = {
-    Accept: 'application/json', };
+    Accept: 'application/json',
+    'Accept-Encoding': 'br',
+  };
 
   if (config.useUserAgent && config.userAgent) {
     headers['User-Agent'] = config.userAgent;

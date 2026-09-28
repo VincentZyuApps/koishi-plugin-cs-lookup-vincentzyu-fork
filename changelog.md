@@ -2,6 +2,12 @@
 
 本文件根据 Git 提交历史整理，版本号以各提交中的 `package.json` 为准。作者沿用 Git commit author；同一版本包含多个提交时合并记录。
 
+## 🚀 1.4.11-beta.16+20260928
+
+- 默认请求头显式指定 `Accept-Encoding: br`，避免 Axios 默认发送 gzip 触发 Steam 对未登录请求的 429 反爬拦截。
+- 完善配置描述、使用说明及 README，补充在遭遇频繁 429 限流时填入并开启已登录 Cookie 的实战指引。
+- 作者：VincentZyu233；协作者：gemini-code-assist。
+
 ## 🔁 1.4.10-beta.15+20260828
 
 - 恢复 `proxy.enabled` boolean 开关，移除未发布且无行为差异的代理模式选择。
