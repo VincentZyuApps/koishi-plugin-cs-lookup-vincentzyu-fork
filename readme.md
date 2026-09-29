@@ -135,7 +135,7 @@
 
 #### 🚦 Steam 429 时的推荐配置
 
-> 遇到 429 时，推荐使用 [Mihomo](https://github.com/MetaCubeX/mihomo) 管理节点选择和故障切换。若 Steam/CS2 代理组包含多个节点，优先考虑 `fallback` 策略；详细说明见 [Linux systemd 部署与 Koishi 接入教程](docs/images/prod/Linux使用systemd部署mihomo并配置本插件的详细教程捏.md)。
+> 遇到 429 时，推荐使用 [Mihomo](https://github.com/MetaCubeX/mihomo) 管理节点选择和故障切换。若 Steam/CS2 代理组包含多个节点，优先考虑 `fallback` 策略；详细说明见 [Linux systemd 部署与 Koishi 接入教程](docs/prod/Linux使用systemd部署mihomo并配置本插件的详细教程捏.md)。
 >
 > 💡 **防 429 进阶建议**：
 > - 插件默认已在底层指定 `Accept-Encoding: br`，避免 Axios 默认带 gzip 触发 Steam 对未登录请求的爬虫拦截。
