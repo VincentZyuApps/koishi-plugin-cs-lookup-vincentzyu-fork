@@ -2,6 +2,14 @@
 
 本文件根据 Git 提交历史整理，版本号以各提交中的 `package.json` 为准。作者沿用 Git commit author；同一版本包含多个提交时合并记录。
 
+## 🚀 1.4.13-beta.19+20260929
+
+- 重构 Puppeteer 字体配置与渲染体系，新增 `fontMode` 四选一单选配置（`npm-lxgw` 默认、`git-release`、`custom-path`、`system-default`）。
+- 引入 `@chinese-fonts/lxgwwenkai` 依赖，实现根据页面字符 Unicode codepoints 动态过滤切片并内联 base64，兼顾轻量与开箱即用。
+- 确立“零隐式 fallback”原则：选定模式失败时直接抛出 `FontLoadError` 异常终止出图，Session 发送简明统一排查提示，Console 依据 `logLevel` 输出详细排障堆栈。
+- 限制 `customFontPath` 仅在单选模式为“指定自定义字体绝对路径”时生效，并强化路径合法性与文件格式（`.ttf/.otf/.woff/.woff2`）校验。
+- 作者：VincentZyu233；协作者：gemini-code-assist。
+
 ## 🚀 1.4.12-beta.18
 
 - 移除构建元数据后缀，规范 SemVer 版本号以兼容 npm 异步处理流水线。

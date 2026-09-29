@@ -8,6 +8,15 @@ import {
 import { stringifyCompact, DEFAULT_KEYBOARD_ROWS } from './qq';
 import { DEFAULT_LXGW_WENKAI_PATH } from './font';
 
+export const FONT_MODE = {
+  NPM_LXGW: 'npm-lxgw',
+  GIT_RELEASE: 'git-release',
+  CUSTOM_PATH: 'custom-path',
+  SYSTEM_DEFAULT: 'system-default',
+} as const;
+
+export type FontMode = (typeof FONT_MODE)[keyof typeof FONT_MODE];
+
 export interface Config {
   // ==================================================================
   // ===== ⚙️ 基础设置 =====
@@ -113,7 +122,9 @@ export interface Config {
   itemNameBgOpacity: number;
   /** 饰品图片缩放比例 (50-300%) */
   itemImageScale: number;
-  /** 自定义字体文件绝对路径 */
+  /** 卡片渲染字体模式 */
+  fontMode: FontMode;
+  /** 自定义字体文件绝对路径（仅在 fontMode 为 custom-path 时生效） */
   customFontPath: string;
   /** 卡片底部自定义文字 */
   footerCustomText: string;
@@ -411,11 +422,20 @@ export const Config: Schema<Config> = Schema.intersect([
       .max(300)
       .step(1)
       .description('🖼️ 饰品图片大小缩放百分比 (50-300%，默认180%)'),
+    fontMode: Schema.union([
+      Schema.const(FONT_MODE.NPM_LXGW).description('📦 霞鹜文楷（npm 内置，默认）'),
+      Schema.const(FONT_MODE.GIT_RELEASE).description('🐙 霞鹜文楷等宽版（从 Git Release 下载）'),
+      Schema.const(FONT_MODE.CUSTOM_PATH).description('📂 指定自定义字体绝对路径'),
+      Schema.const(FONT_MODE.SYSTEM_DEFAULT).description('🔤 系统默认字体栈'),
+    ])
+      .role('radio')
+      .default(FONT_MODE.NPM_LXGW)
+      .description('🔤 Puppeteer 卡片渲染字体模式（选哪个就用哪个，任意模式加载失败将直接报错不进行隐式回退）'),
     customFontPath: Schema.string()
       .role('textarea', { rows: [2, 5] })
       .default(DEFAULT_LXGW_WENKAI_PATH)
       .description(
-        '🔤 自定义字体文件绝对路径<br><i>默认展示 process.cwd()/data/fonts/LXGWWenKaiMono-Regular.ttf；运行时自动映射到 ctx.baseDir/data/fonts/LXGWWenKaiMono-Regular.ttf。</i>',
+        '📂 自定义字体文件绝对路径<br><i>仅在字体模式选择“指定自定义字体绝对路径”时生效。默认展示 process.cwd()/data/fonts/LXGWWenKaiMono-Regular.ttf；运行时自动映射到 ctx.baseDir/data/fonts/LXGWWenKaiMono-Regular.ttf。</i>',
       ),
     footerCustomText: Schema.string()
       .default('📌 Powered by koishi-plugin-cs-lookup-vincentzyu-fork')

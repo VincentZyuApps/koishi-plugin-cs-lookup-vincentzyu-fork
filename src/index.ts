@@ -10,6 +10,8 @@ import { Config as ConfigSchema } from './config';
 import { logInfo } from './logger';
 import { checkAndDownloadFonts } from './font';
 export { usage } from './usage';
+export { FONT_MODE, type FontMode } from './config';
+export { resolveFontConfig, FontLoadError, BASE_FONT_STACK, type CustomFontConfig } from './font';
 
 export const name = 'cs-lookup-vincentzyu-fork';
 const PLUGIN_NAME = name;

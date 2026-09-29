@@ -6,10 +6,15 @@ import {} from 'koishi-plugin-puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-  buildCustomFontConfig, generateHtml, renderCsInvImage,
+  generateHtml, renderCsInvImage,
 } from '../template/pptr-render-cs-inv';
 import { replyWithMarkdownKeyboard } from '../qq';
-import { checkAndDownloadFonts } from '../font';
+import {
+  checkAndDownloadFonts,
+  resolveFontConfig,
+  FontLoadError,
+  type CustomFontConfig,
+} from '../font';
 import {
   describeInventoryError,
   formatInventoryErrorHtml,
@@ -445,7 +450,8 @@ export function inv(ctx: Context, config: any) {
           pageHeight = 150 + rowCount * (cardHeight + GAP_CALC) + 40;
         }
 
-        const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
+        const fontContentText = `${cardHtml} ${totalStr} ${playerPersonName} ${config.footerCustomText || ''} ${config.watermarkText || ''} CS2库存查询SteamID总物品数在线离线状态`;
+        const fontConfig = resolveFontConfig(ctx, config, fontContentText);
 
         const html = generateHtml({
           cardHTML: cardHtml,
@@ -514,7 +520,24 @@ export function inv(ctx: Context, config: any) {
           logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', `⏳ ⏱️   总耗时: ${totalTime}ms`);
           logInfo(ctx, config, 'debug', 'src/commands/cs-inv.ts', '⏱️ ====================================');
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (e instanceof FontLoadError) {
+          logInfo(
+            ctx,
+            config,
+            'error',
+            'src/commands/cs-inv.ts',
+            `🔤 ❌ 字体加载失败 [模式: ${config.fontMode}]: ${e.message}\n${e.stack || ''}`,
+          );
+          const replyPrefixErr = config.replyToUser
+            ? h.quote(session.messageId)
+            : '';
+          await session.send(
+            `${replyPrefixErr}❌ CS2 库存出图失败：字体加载异常（遇到 ${e.message}，请检查控制台详细日志）`,
+          );
+          return;
+        }
+
         logInfo(ctx, config, 'error', 'src/commands/cs-inv.ts', `⚡ ❌ 💥 发生错误: ${e.stack || e}`);
         const inventoryError = describeInventoryError(e);
         logInfo(ctx, config, 'warn', 'src/commands/cs-inv.ts', `🧭 库存查询失败说明: ${formatInventoryErrorLog(inventoryError)}`);
@@ -533,18 +556,61 @@ export function inv(ctx: Context, config: any) {
         // 错误渲染不能再次请求 Steam，否则 429/网络故障会被放大。
         // 如果前面的玩家信息请求成功，正常路径已经写入这些变量；失败时保留默认值。
 
-        const fontConfig = buildCustomFontConfig(ctx, config.customFontPath);
+        let errFontConfig: CustomFontConfig | null = null;
+        try {
+          const errFontContent = `${cardHtml} ${playerPersonName} CS2库存查询SteamID总物品数在线离线状态`;
+          errFontConfig = resolveFontConfig(ctx, config, errFontContent);
+        } catch (fontErr: any) {
+          logInfo(
+            ctx,
+            config,
+            'warn',
+            'src/commands/cs-inv.ts',
+            `🔤 ⚠️ 渲染错误卡片时字体加载异常，将使用系统默认字体渲染: ${fontErr?.message || fontErr}`,
+          );
+        }
+
         const invHtml = generateHtml({
-          cardHTML: cardHtml, gridColumns: 1, totalStr: '总物品数: ??', steamId: STEAMID, steamName: playerPersonName, playerAvatarUrl: proxiedPlayerAvatarFullUrl, playerLastLogoffTimeStr, darkMode: config.enableDarkTheme, enableAvatarBackground: config.enableAvatarBackground, fontConfig, showItemCount: false, itemNamePosition: config.itemNamePosition || 'top', itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6, itemImageScale: config.itemImageScale ?? 100, footerCustomText: config.footerCustomText || '', watermarkEnabled: config.watermarkEnabled !== false, watermarkText:
+          cardHTML: cardHtml,
+          gridColumns: 1,
+          totalStr: '总物品数: ??',
+          steamId: STEAMID,
+          steamName: playerPersonName,
+          playerAvatarUrl: proxiedPlayerAvatarFullUrl,
+          playerLastLogoffTimeStr,
+          darkMode: config.enableDarkTheme,
+          enableAvatarBackground: config.enableAvatarBackground,
+          fontConfig: errFontConfig,
+          showItemCount: false,
+          itemNamePosition: config.itemNamePosition || 'top',
+          itemNameBgOpacity: config.itemNameBgOpacity ?? 0.6,
+          itemImageScale: config.itemImageScale ?? 100,
+          footerCustomText: config.footerCustomText || '',
+          watermarkEnabled: config.watermarkEnabled !== false,
+          watermarkText:
             config.watermarkText ||
-            'Powered by koishi-plugin-cs-lookup-vincentzyu-fork', watermarkFontSize: config.watermarkFontSize ?? 16, watermarkAngle: config.watermarkAngle ?? 45, watermarkOpacity: config.watermarkOpacity ?? 0.6, watermarkRowGap: config.watermarkRowGap ?? 60, watermarkColGap: config.watermarkColGap ?? 80, });
+            'Powered by koishi-plugin-cs-lookup-vincentzyu-fork',
+          watermarkFontSize: config.watermarkFontSize ?? 16,
+          watermarkAngle: config.watermarkAngle ?? 45,
+          watermarkOpacity: config.watermarkOpacity ?? 0.6,
+          watermarkRowGap: config.watermarkRowGap ?? 60,
+          watermarkColGap: config.watermarkColGap ?? 80,
+        });
         const invImageBase64 = await renderCsInvImage(ctx, {
-          html: invHtml, imageType: config.imageType || 'jpeg', imageQuality: config.imageQuality || 60, waitUntil: config.waitUntil || 'domcontentloaded', viewportWidth: 1666, viewportHeight: 720, logLevel: 'silent', });
+          html: invHtml,
+          imageType: config.imageType || 'jpeg',
+          imageQuality: config.imageQuality || 60,
+          waitUntil: config.waitUntil || 'domcontentloaded',
+          viewportWidth: 1666,
+          viewportHeight: 720,
+          logLevel: 'silent',
+        });
         const replyPrefixErr = config.replyToUser
           ? h.quote(session.messageId)
           : '';
         await session.send(
-          `${replyPrefixErr}❌ 查询结果:${h.image(invImageBase64)}`);
+          `${replyPrefixErr}❌ 查询结果:${h.image(invImageBase64)}`,
+        );
       } finally {
         try {
           await session.bot.deleteMessage(session.guildId, String(waitMsgId));

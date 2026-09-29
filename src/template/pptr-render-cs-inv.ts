@@ -3,11 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LOG_LEVELS } from '../types';
 import { logInfo } from '../logger';
-import { resolveRuntimeFontPath } from '../font';
+import { resolveRuntimeFontPath, BASE_FONT_STACK, type CustomFontConfig } from '../font';
 import type { PuppeteerLifeCycleEvent } from 'puppeteer-core';
 
-const BASE_FONT_STACK =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Microsoft YaHei", "PingFang SC", sans-serif';
+export { BASE_FONT_STACK, type CustomFontConfig };
 const CUSTOM_FONT_FAMILY = 'CSLookupCustomFont';
 
 function getFontFormat(ext: string): string {
@@ -22,11 +21,6 @@ function getFontMimeType(ext: string): string {
   if (ext === '.woff2') return 'font/woff2';
   if (ext === '.woff') return 'font/woff';
   return 'font/ttf';
-}
-
-export interface CustomFontConfig {
-  css: string;
-  fontFamily: string;
 }
 
 export function buildCustomFontConfig(
