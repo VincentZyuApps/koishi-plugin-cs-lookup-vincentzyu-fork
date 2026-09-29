@@ -29,12 +29,13 @@
 > | **Python `aiohttp` (传统压缩)** | **`gzip, deflate`** | `Python/3.x aiohttp/x` | `*/*` | **`HTTP 429 Too Many Requests`** | 异步请求中带传统压缩头同样被 WAF 规则精准拦截 |
 > | **Python `httpx` (现代客户端)** | `gzip, deflate, br` | `python-httpx/0.x` | `*/*` | **`HTTP 200 OK`** | 原生完整支持 Brotli 特征，Steam 判定符合现代标准放行 |
 > | **Node Axios（优化前默认）** | **`gzip, compress, deflate, br`** | `axios/1.x` | `application/json` | **`HTTP 429 Too Many Requests`** | **Axios 独有特征组合**（未登录+compress+gzip）触发拦截 |
-> | **Node Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避特征规则**，未登录状态秒回 200 OK 并完整出图 |
+> | **Node Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避特征规则**，未登录状态秒回 200 OK 并完整出图（当前插件使用） |
 > 
 > **💡 核心排查与防爬机理总结**：
 > 1. Steam 对库存接口部署的反爬 WAF 会对**未携带登录凭据（匿名未登录）**且请求头仅包含 **`gzip, deflate`** 的常见脚本爬虫直接下发 `HTTP 429 Too Many Requests`；
 > 2. Axios 在 Node.js 环境下默认会自动注入包含 `compress` 与 `gzip` 的特征请求头，导致在未登录时稳定触发 429；
 > 3. 在底层请求配置中显式将 `Accept-Encoding` 指定为 `br`，即刻打破该特征规则，实现跨语言、跨运行时的稳定出图。
+> 4. **代码实现位置**：见 [`src/proxy.ts:97-108`](src/proxy.ts#L97-L108) 的 `createAxiosInstance`。
 
 
 ## 🔁 1.4.10-beta.15+20260828

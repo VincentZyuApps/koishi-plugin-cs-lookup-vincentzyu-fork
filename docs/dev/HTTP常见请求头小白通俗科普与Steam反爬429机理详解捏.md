@@ -113,7 +113,10 @@ const headers = {
 | **Python `aiohttp` (传统压缩)** | **`gzip, deflate`** | `Python/3.x aiohttp/x` | `*/*` | **`HTTP 429 Too Many Requests`** | 异步请求中带传统压缩头同样被 WAF 规则精准拦截 |
 | **Python `httpx` (现代客户端)** | `gzip, deflate, br` | `python-httpx/0.x` | `*/*` | **`HTTP 200 OK`** | 原生完整支持 Brotli 特征，Steam 判定符合现代标准放行 |
 | **Node Axios（优化前默认）** | **`gzip, compress, deflate, br`** | `axios/1.x` | `application/json` | **`HTTP 429 Too Many Requests`** | **Axios 独有特征组合**（未登录+compress+gzip）触发拦截 |
-| **Node Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避特征规则**，未登录状态秒回 200 OK 并完整出图 |
+| **Node Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避特征规则**，未登录状态秒回 200 OK 并完整出图（当前插件使用） |
+
+> 📌 **当前插件代码落地位置**：
+> 详见 [`src/proxy.ts:97-108`](../../src/proxy.ts#L97-L108) 的 `createAxiosInstance` 函数。插件在此处显式设置了 `'Accept-Encoding': 'br'`，并动态挂载了配置项中的真实浏览器 `User-Agent` 与登录 `Cookie`。
 
 ---
 
