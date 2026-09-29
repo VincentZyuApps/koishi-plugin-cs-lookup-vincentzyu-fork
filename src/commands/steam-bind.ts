@@ -33,9 +33,9 @@ export async function registerSteamBindCommand(ctx: Context, config: any) {
   ctx
     .command(
       `${config.steamBindCommandName} <steamId:string> [userId:string]`, '🔗 绑定 SteamId 到 Koishi 用户\n' + 
-      '\t 💡 提示：打开 `https://steamid.io` → 粘贴个人资料链接 → 复制 SteamID64 🔎' +
+      '\t 💡 提示：打开 `https://steamid.io` → 粘贴个人资料链接 → 复制 SteamID64 🔎\n' +
       '\t 📌 参数1 必填: steamId 纯数字, 用 steam-getid 获取\n' + 
-      '\t 👤 参数2 可选: userId/@用户, 为他人绑定, 默认自己' +
+      '\t 👤 参数2 可选: userId/@用户, 为他人绑定, 默认自己\n' +
       '', { authority: 0 }, )
     .alias('steam-bind')
     .action(async ({ session }, arg1_steamId, arg2_userId) => {

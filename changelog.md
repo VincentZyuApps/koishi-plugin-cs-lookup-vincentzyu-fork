@@ -2,6 +2,11 @@
 
 本文件根据 Git 提交历史整理，版本号以各提交中的 `package.json` 为准。作者沿用 Git commit author；同一版本包含多个提交时合并记录。
 
+## 🚀 1.4.13-beta.20+20260929
+
+- 优化 `steam-bind` 指令的帮助说明排版，提示文字尾部增加换行符，多行展示更加清晰整洁。
+- 作者：VincentZyu233；协作者：gemini-code-assist。
+
 ## 🚀 1.4.13-beta.19+20260929
 
 - 重构 Puppeteer 字体配置与渲染体系，新增 `fontMode` 四选一单选配置（`npm-lxgw` 默认、`git-release`、`custom-path`、`system-default`）。
