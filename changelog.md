@@ -16,6 +16,22 @@
 - 完善配置描述、使用说明及 README，补充在遭遇频繁 429 限流时填入并开启已登录 Cookie 的实战指引。
 - 作者：VincentZyu233；协作者：gemini-code-assist。
 
+### 📊 常见客户端请求头与 Steam 社区库存接口响应对照表 (实测 A/B 实验)
+
+| 请求方式 / 客户端 | 发送的 `Accept-Encoding` | 默认 `User-Agent` | `Accept` | 未登录响应状态 | 实测结果与机理分析 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **curl** | *(不携带)* | `curl/8.x.x` | `*/*` | **`HTTP 200 OK`** | 正常返回完整库存数据（未触发压缩防爬） |
+| **Node 原生 `https`** | *(不携带 或 显式设为 `br`)* | *(不携带)* | `*/*` | **`HTTP 200 OK`** | 正常放行，返回数据 |
+| **现代桌面浏览器** (Chrome 等) | `gzip, deflate, br, zstd` | 浏览器完整 UA | `application/json, ...` | **`HTTP 200 OK`** | 附带完整浏览器指纹/TLS 特征，Steam 视为正常用户放行 |
+| **Axios（优化前默认）** | **`gzip, compress, deflate, br`** | `axios/1.x` | `application/json` | **`HTTP 429 Too Many Requests`** | **精准命中 Steam 反爬特征**（未登录且带 `gzip` 自动限流） |
+| **Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避 gzip 拦截规则，秒回 200 OK 并完整出图** |
+
+> **💡 核心排查与防爬机理总结**：
+> 1. Steam 对库存接口部署的反爬 WAF 会对**未携带登录凭据（匿名未登录）**且请求头包含 **`gzip`** 的常见脚本爬虫直接下发 `HTTP 429 Too Many Requests`；
+> 2. Axios 在 Node.js 环境下默认会自动注入 `Accept-Encoding: gzip, compress, deflate, br`，导致在代理节点正常时依然稳定被 Steam 429；
+> 3. 在底层请求配置中显式将 `Accept-Encoding` 指定为 `br`，即刻打破该特征规则，未登录状态下秒回 200 OK 并顺利出图。
+
+
 ## 🔁 1.4.10-beta.15+20260828
 
 - 恢复 `proxy.enabled` boolean 开关，移除未发布且无行为差异的代理模式选择。
