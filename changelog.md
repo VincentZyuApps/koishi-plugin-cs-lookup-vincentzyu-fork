@@ -16,20 +16,25 @@
 - 完善配置描述、使用说明及 README，补充在遭遇频繁 429 限流时填入并开启已登录 Cookie 的实战指引。
 - 作者：VincentZyu233；协作者：gemini-code-assist。
 
-> ### 📊 常见客户端请求头与 Steam 社区库存接口响应对照表 (实测 A/B 实验)
+> ### 📊 常见多语言/客户端请求头与 Steam 社区库存接口响应对照表 (实测 A/B 实验)
 > 
 > | 请求方式 / 客户端 | 发送的 `Accept-Encoding` | 默认 `User-Agent` | `Accept` | 未登录响应状态 | 实测结果与机理分析 |
 > | :--- | :--- | :--- | :--- | :--- | :--- |
 > | **curl** | *(不携带)* | `curl/8.x.x` | `*/*` | **`HTTP 200 OK`** | 正常返回完整库存数据（未触发压缩防爬） |
-> | **Node 原生 `https`** | *(不携带 或 显式设为 `br`)* | *(不携带)* | `*/*` | **`HTTP 200 OK`** | 正常放行，返回数据 |
+> | **Node 原生 `https`** | *(不携带 或 显式设为 `br`)* | *(不携带)* | `*/*` | **`HTTP 200 OK`** | 默认无压缩头，Steam 直接放行返回数据 |
 > | **现代桌面浏览器** (Chrome 等) | `gzip, deflate, br, zstd` | 浏览器完整 UA | `application/json, ...` | **`HTTP 200 OK`** | 附带完整浏览器指纹/TLS 特征，Steam 视为正常用户放行 |
-> | **Axios（优化前默认）** | **`gzip, compress, deflate, br`** | `axios/1.x` | `application/json` | **`HTTP 429 Too Many Requests`** | **精准命中 Steam 反爬特征**（未登录且带 `gzip` 自动限流） |
-> | **Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避 gzip 拦截规则，秒回 200 OK 并完整出图** |
+> | **Python 内置 `urllib.request`** | *(不携带)* | `Python-urllib/3.x` | `*/*` | **`HTTP 200 OK`** | 默认不发送压缩请求头，未踩中压缩防爬规则 |
+> | **Python `requests` (传统压缩)** | **`gzip, deflate`** | `python-requests/2.x` | `*/*` | **`HTTP 429 Too Many Requests`** | **精准命中传统脚本爬虫特征**，直接返回 429 限流 |
+> | **Python `requests` (优化后 `br`)** | **`br`** | 浏览器 UA | `application/json` | **`HTTP 200 OK`** | **指定 Brotli 压缩成功放行**，秒回 200 OK 并成功解压 |
+> | **Python `aiohttp` (传统压缩)** | **`gzip, deflate`** | `Python/3.x aiohttp/x` | `*/*` | **`HTTP 429 Too Many Requests`** | 异步请求中带传统压缩头同样被 WAF 规则精准拦截 |
+> | **Python `httpx` (现代客户端)** | `gzip, deflate, br` | `python-httpx/0.x` | `*/*` | **`HTTP 200 OK`** | 原生完整支持 Brotli 特征，Steam 判定符合现代标准放行 |
+> | **Node Axios（优化前默认）** | **`gzip, compress, deflate, br`** | `axios/1.x` | `application/json` | **`HTTP 429 Too Many Requests`** | **Axios 独有特征组合**（未登录+compress+gzip）触发拦截 |
+> | **Node Axios（优化后显式 `br`）** | **`br`** | 真实浏览器 UA | `application/json` | **`HTTP 200 OK`** | **成功规避特征规则**，未登录状态秒回 200 OK 并完整出图 |
 > 
 > **💡 核心排查与防爬机理总结**：
-> 1. Steam 对库存接口部署的反爬 WAF 会对**未携带登录凭据（匿名未登录）**且请求头包含 **`gzip`** 的常见脚本爬虫直接下发 `HTTP 429 Too Many Requests`；
-> 2. Axios 在 Node.js 环境下默认会自动注入 `Accept-Encoding: gzip, compress, deflate, br`，导致在代理节点正常时依然稳定被 Steam 429；
-> 3. 在底层请求配置中显式将 `Accept-Encoding` 指定为 `br`，即刻打破该特征规则，未登录状态下秒回 200 OK 并顺利出图。
+> 1. Steam 对库存接口部署的反爬 WAF 会对**未携带登录凭据（匿名未登录）**且请求头仅包含 **`gzip, deflate`** 的常见脚本爬虫直接下发 `HTTP 429 Too Many Requests`；
+> 2. Axios 在 Node.js 环境下默认会自动注入包含 `compress` 与 `gzip` 的特征请求头，导致在未登录时稳定触发 429；
+> 3. 在底层请求配置中显式将 `Accept-Encoding` 指定为 `br`，即刻打破该特征规则，实现跨语言、跨运行时的稳定出图。
 
 
 ## 🔁 1.4.10-beta.15+20260828
