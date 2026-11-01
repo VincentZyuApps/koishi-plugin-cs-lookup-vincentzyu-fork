@@ -4,7 +4,16 @@ import { existsSync, readFileSync } from 'fs';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { createRequire } from 'module';
 import type { Context } from 'koishi';
-import { FONT_MODE, type Config } from './config';
+import type { Config } from './config';
+
+export const FONT_MODE = {
+  NPM_LXGW: 'npm-lxgw',
+  GIT_RELEASE: 'git-release',
+  CUSTOM_PATH: 'custom-path',
+  SYSTEM_DEFAULT: 'system-default',
+} as const;
+
+export type FontMode = (typeof FONT_MODE)[keyof typeof FONT_MODE];
 
 export const LXGW_WENKAI_FILE_NAME = 'LXGWWenKaiMono-Regular.ttf';
 

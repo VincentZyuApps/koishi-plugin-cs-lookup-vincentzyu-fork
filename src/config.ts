@@ -6,16 +6,13 @@ import {
   type LogLevel,
 } from './types';
 import { stringifyCompact, DEFAULT_KEYBOARD_ROWS } from './qq';
-import { DEFAULT_LXGW_WENKAI_PATH } from './font';
+import {
+  DEFAULT_LXGW_WENKAI_PATH,
+  FONT_MODE,
+  type FontMode,
+} from './font';
 
-export const FONT_MODE = {
-  NPM_LXGW: 'npm-lxgw',
-  GIT_RELEASE: 'git-release',
-  CUSTOM_PATH: 'custom-path',
-  SYSTEM_DEFAULT: 'system-default',
-} as const;
-
-export type FontMode = (typeof FONT_MODE)[keyof typeof FONT_MODE];
+export { FONT_MODE, type FontMode };
 
 export interface Config {
   // ==================================================================
