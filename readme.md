@@ -21,9 +21,9 @@
 
 ## 📸 效果预览
 
-![🎮 CS2 库存渲染截图](docs/images/preview-pptr-render-cs-inv.ts.png)
+![🎮 CS2 库存渲染截图](https://cdn.jsdelivr.net/gh/VincentZyuApps/koishi-plugin-cs-lookup-vincentzyu-fork@master/docs/images/preview-pptr-render-cs-inv.ts.png)
 
-![💬 聊天界面效果 - OneBot QQ 平台](docs/images/preview-chat-platform-onebot-qq.png)
+![💬 聊天界面效果 - OneBot QQ 平台](https://cdn.jsdelivr.net/gh/VincentZyuApps/koishi-plugin-cs-lookup-vincentzyu-fork@master/docs/images/preview-chat-platform-onebot-qq.png)
 
 ---
 
